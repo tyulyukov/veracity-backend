@@ -7,4 +7,3 @@ import { UserController } from './ui/http/user/user.controller';
   controllers: [UserController],
 })
 export class UserModule {}
-

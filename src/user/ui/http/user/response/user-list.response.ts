@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { UserListOutput } from '../../../../operation/user/output/user-list.output';
+import { UserListOutput } from '@/user/operation/user/output/user-list.output';
 import { UserResponseDto } from './user.response';
 
 export class UserListResponseDto {
@@ -26,4 +26,3 @@ export class UserListResponseDto {
     return response;
   }
 }
-

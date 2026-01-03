@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { IncomingMessage } from 'http';
 import { LoggerModule as PinoLoggerModule } from 'nestjs-pino';
-import { AppConfigService } from '../config/config.service';
+import { AppConfigService } from '@/common/config/config.service';
 
 @Module({
   imports: [

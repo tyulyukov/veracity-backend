@@ -9,9 +9,9 @@ import {
   IsUrl,
   MaxLength,
 } from 'class-validator';
-import { UserStatus } from '../../../../domain/enum/user-status.enum';
-import { ContactInfo } from '../../../../domain/type/contact-info';
-import { UpdateUserInput } from '../../../../operation/user/input/update-user.input';
+import { UserStatus } from '@/user/domain/enum/user-status.enum';
+import { ContactInfo } from '@/user/domain/type/contact-info';
+import { UpdateUserInput } from '@/user/operation/user/input/update-user.input';
 
 export class UpdateUserRequestDto {
   @ApiPropertyOptional({ example: 'john.doe@example.com', maxLength: 255 })
@@ -84,4 +84,3 @@ export class UpdateUserRequestDto {
     };
   }
 }
-

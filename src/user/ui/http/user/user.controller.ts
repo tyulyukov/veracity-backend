@@ -18,11 +18,11 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
-import { CreateUserHandler } from '../../../operation/user/handler/create-user.handler';
-import { DeleteUserHandler } from '../../../operation/user/handler/delete-user.handler';
-import { GetUserHandler } from '../../../operation/user/handler/get-user.handler';
-import { ListUsersHandler } from '../../../operation/user/handler/list-users.handler';
-import { UpdateUserHandler } from '../../../operation/user/handler/update-user.handler';
+import { CreateUserHandler } from '@/user/operation/user/handler/create-user.handler';
+import { DeleteUserHandler } from '@/user/operation/user/handler/delete-user.handler';
+import { GetUserHandler } from '@/user/operation/user/handler/get-user.handler';
+import { ListUsersHandler } from '@/user/operation/user/handler/list-users.handler';
+import { UpdateUserHandler } from '@/user/operation/user/handler/update-user.handler';
 import { CreateUserRequestDto } from './request/create-user.request';
 import { UpdateUserRequestDto } from './request/update-user.request';
 import { UserListResponseDto } from './response/user-list.response';
@@ -85,4 +85,3 @@ export class UserController {
     await this.deleteUserHandler.handle({ id });
   }
 }
-

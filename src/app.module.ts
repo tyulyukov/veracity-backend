@@ -9,14 +9,7 @@ import { LoggerModule } from './common/logger/logger.module';
 import { UserModule } from './user/user.module';
 
 @Module({
-  imports: [
-    AppConfigModule,
-    LoggerModule,
-    ClsModule,
-    DatabaseModule,
-    HealthModule,
-    UserModule,
-  ],
+  imports: [AppConfigModule, LoggerModule, ClsModule, DatabaseModule, HealthModule, UserModule],
   providers: [
     {
       provide: APP_FILTER,

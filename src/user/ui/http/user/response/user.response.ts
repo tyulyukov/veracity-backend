@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { UserStatus } from '../../../../domain/enum/user-status.enum';
-import { ContactInfo } from '../../../../domain/type/contact-info';
-import { UserOutput } from '../../../../operation/user/output/user.output';
+import { UserStatus } from '@/user/domain/enum/user-status.enum';
+import { ContactInfo } from '@/user/domain/type/contact-info';
+import { UserOutput } from '@/user/operation/user/output/user.output';
 
 export class UserResponseDto {
   @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
@@ -57,4 +57,3 @@ export class UserResponseDto {
     return response;
   }
 }
-

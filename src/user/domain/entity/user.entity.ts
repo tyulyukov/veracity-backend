@@ -1,11 +1,6 @@
-import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
-import { UserStatus } from '../enum/user-status.enum';
-import { ContactInfo } from '../type/contact-info';
+import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { UserStatus } from '@/user/domain/enum/user-status.enum';
+import { ContactInfo } from '@/user/domain/type/contact-info';
 
 @Entity('users')
 export class User {
@@ -46,4 +41,3 @@ export class User {
   @Column({ type: 'timestamptz', nullable: true, name: 'last_activity_at' })
   lastActivityAt: Date | null;
 }
-

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { UserService } from '../../../service/user/service/user.service';
-import { DeleteUserInput } from '../input/get-user.input';
+import { UserService } from '@/user/service/user/service/user.service';
+import { DeleteUserInput } from '@/user/operation/user/input/get-user.input';
 
 @Injectable()
 export class DeleteUserHandler {
@@ -10,4 +10,3 @@ export class DeleteUserHandler {
     await this.userService.delete(input.id);
   }
 }
-

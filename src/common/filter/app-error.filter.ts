@@ -2,7 +2,7 @@ import { ArgumentsHost, Catch, ExceptionFilter, HttpStatus, Injectable } from '@
 import { Response } from 'express';
 import { ClsService } from 'nestjs-cls';
 import { Logger } from 'nestjs-pino';
-import { AppError } from '../error/app.error';
+import { AppError } from '@/common/error/app.error';
 
 @Catch(AppError)
 @Injectable()

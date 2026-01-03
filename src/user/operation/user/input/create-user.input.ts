@@ -1,5 +1,5 @@
-import { UserStatus } from '../../../domain/enum/user-status.enum';
-import { ContactInfo } from '../../../domain/type/contact-info';
+import { UserStatus } from '@/user/domain/enum/user-status.enum';
+import { ContactInfo } from '@/user/domain/type/contact-info';
 
 export type CreateUserInput = {
   email: string;

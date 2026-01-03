@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { UserService } from '../../../service/user/service/user.service';
-import { UserListOutput } from '../output/user-list.output';
+import { UserService } from '@/user/service/user/service/user.service';
+import { UserListOutput } from '@/user/operation/user/output/user-list.output';
 
 @Injectable()
 export class ListUsersHandler {

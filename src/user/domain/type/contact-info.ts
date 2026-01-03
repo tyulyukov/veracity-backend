@@ -7,4 +7,3 @@ export interface ContactInfo {
   whatsapp?: string;
   [key: string]: string | undefined;
 }
-

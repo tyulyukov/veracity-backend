@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { UserService } from '../../../service/user/service/user.service';
-import { GetUserInput } from '../input/get-user.input';
-import { UserOutput } from '../output/user.output';
+import { UserService } from '@/user/service/user/service/user.service';
+import { GetUserInput } from '@/user/operation/user/input/get-user.input';
+import { UserOutput } from '@/user/operation/user/output/user.output';
 
 @Injectable()
 export class GetUserHandler {

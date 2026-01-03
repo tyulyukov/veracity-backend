@@ -2,6 +2,7 @@ import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import prettierConfig from 'eslint-config-prettier';
 import prettierPlugin from 'eslint-plugin-prettier';
+import noRelativeImportPaths from 'eslint-plugin-no-relative-import-paths';
 
 export default tseslint.config(
   {
@@ -13,6 +14,7 @@ export default tseslint.config(
   {
     plugins: {
       prettier: prettierPlugin,
+      'no-relative-import-paths': noRelativeImportPaths,
     },
     rules: {
       'prettier/prettier': 'error',
@@ -21,6 +23,10 @@ export default tseslint.config(
       '@typescript-eslint/explicit-module-boundary-types': 'off',
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      'no-relative-import-paths/no-relative-import-paths': [
+        'error',
+        { allowSameFolder: true, rootDir: 'src', prefix: '@' },
+      ],
     },
   },
 );

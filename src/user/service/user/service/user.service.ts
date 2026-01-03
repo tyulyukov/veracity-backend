@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { User } from '../../../domain/entity/user.entity';
-import { UserNotFoundError } from '../../../domain/error/user-not-found.error';
-import { UserRepository } from '../repository/user.repository';
+import { User } from '@/user/domain/entity/user.entity';
+import { UserNotFoundError } from '@/user/domain/error/user-not-found.error';
+import { UserRepository } from '@/user/service/user/repository/user.repository';
 
 @Injectable()
 export class UserService {
@@ -46,4 +46,3 @@ export class UserService {
     }
   }
 }
-

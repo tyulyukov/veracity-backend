@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { UserServiceModule } from '../service/service.module';
+import { UserServiceModule } from '@/user/service/service.module';
 import { CreateUserHandler } from './user/handler/create-user.handler';
 import { DeleteUserHandler } from './user/handler/delete-user.handler';
 import { GetUserHandler } from './user/handler/get-user.handler';
@@ -24,4 +24,3 @@ import { UpdateUserHandler } from './user/handler/update-user.handler';
   ],
 })
 export class UserOperationModule {}
-

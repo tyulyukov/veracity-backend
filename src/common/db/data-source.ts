@@ -14,4 +14,3 @@ export default new DataSource({
   migrations: ['src/common/db/migrations/*.ts'],
   migrationsTableName: 'migrations',
 });
-
