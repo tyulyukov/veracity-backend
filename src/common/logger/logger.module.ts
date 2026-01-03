@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, RequestMethod } from '@nestjs/common';
 import { IncomingMessage } from 'http';
 import { LoggerModule as PinoLoggerModule } from 'nestjs-pino';
 import { AppConfigService } from '@/common/config/config.service';
@@ -17,6 +17,7 @@ import { AppConfigService } from '@/common/config/config.service';
           genReqId: (req: IncomingMessage) =>
             (req.headers['x-request-id'] as string) ?? crypto.randomUUID(),
         },
+        forRoutes: [{ path: '{*path}', method: RequestMethod.ALL }],
       }),
     }),
   ],

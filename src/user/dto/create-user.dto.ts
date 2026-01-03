@@ -11,9 +11,8 @@ import {
 } from 'class-validator';
 import { UserStatus } from '@/user/domain/enum/user-status.enum';
 import { ContactInfo } from '@/user/domain/type/contact-info';
-import { CreateUserInput } from '@/user/operation/user/input/create-user.input';
 
-export class CreateUserRequestDto {
+export class CreateUserDto {
   @ApiProperty({ example: 'john.doe@example.com', maxLength: 255 })
   @IsEmail()
   @IsNotEmpty()
@@ -61,17 +60,4 @@ export class CreateUserRequestDto {
   @IsOptional()
   @IsEnum(UserStatus)
   status?: UserStatus;
-
-  toInput(): CreateUserInput {
-    return {
-      email: this.email,
-      firstName: this.firstName,
-      lastName: this.lastName,
-      avatarUrl: this.avatarUrl ?? null,
-      position: this.position ?? null,
-      contactInfo: this.contactInfo ?? null,
-      shortDescription: this.shortDescription ?? null,
-      status: this.status,
-    };
-  }
 }

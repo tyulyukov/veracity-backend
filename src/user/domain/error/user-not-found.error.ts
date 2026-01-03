@@ -10,3 +10,4 @@ export class UserNotFoundError extends AppError {
     });
   }
 }
+

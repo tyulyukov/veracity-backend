@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { User } from '@/user/domain/entity/user.entity';
 import { UserNotFoundError } from '@/user/domain/error/user-not-found.error';
-import { UserRepository } from '@/user/service/user/repository/user.repository';
+import { UserRepository } from '@/user/user.repository';
+import { UpdateUserDto } from '@/user/dto/update-user.dto';
 
 @Injectable()
 export class UserService {
@@ -27,10 +28,15 @@ export class UserService {
     return this.userRepository.findAll();
   }
 
-  async update(id: string, data: Partial<User>): Promise<User> {
+  async update(id: string, dto: UpdateUserDto): Promise<User> {
     const exists = await this.userRepository.exists(id);
     if (!exists) {
       throw new UserNotFoundError(id);
+    }
+    const { lastActivityAt, ...rest } = dto;
+    const data: Partial<User> = { ...rest };
+    if (lastActivityAt !== undefined) {
+      data.lastActivityAt = lastActivityAt ? new Date(lastActivityAt) : null;
     }
     const updated = await this.userRepository.update(id, data);
     if (!updated) {

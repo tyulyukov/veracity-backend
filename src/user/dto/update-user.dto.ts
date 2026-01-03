@@ -11,9 +11,8 @@ import {
 } from 'class-validator';
 import { UserStatus } from '@/user/domain/enum/user-status.enum';
 import { ContactInfo } from '@/user/domain/type/contact-info';
-import { UpdateUserInput } from '@/user/operation/user/input/update-user.input';
 
-export class UpdateUserRequestDto {
+export class UpdateUserDto {
   @ApiPropertyOptional({ example: 'john.doe@example.com', maxLength: 255 })
   @IsOptional()
   @IsEmail()
@@ -66,21 +65,4 @@ export class UpdateUserRequestDto {
   @IsOptional()
   @IsISO8601()
   lastActivityAt?: string | null;
-
-  toInput(id: string): UpdateUserInput {
-    return {
-      id,
-      ...(this.email !== undefined && { email: this.email }),
-      ...(this.firstName !== undefined && { firstName: this.firstName }),
-      ...(this.lastName !== undefined && { lastName: this.lastName }),
-      ...(this.avatarUrl !== undefined && { avatarUrl: this.avatarUrl }),
-      ...(this.position !== undefined && { position: this.position }),
-      ...(this.contactInfo !== undefined && { contactInfo: this.contactInfo }),
-      ...(this.shortDescription !== undefined && { shortDescription: this.shortDescription }),
-      ...(this.status !== undefined && { status: this.status }),
-      ...(this.lastActivityAt !== undefined && {
-        lastActivityAt: this.lastActivityAt ? new Date(this.lastActivityAt) : null,
-      }),
-    };
-  }
 }
