@@ -24,7 +24,7 @@ export class AdminAuthService {
       throw new InvalidCredentialsError();
     }
 
-    const roleResult = await pool.query('SELECT auth.get_current_role() as role');
+    const roleResult = await pool.query('SELECT general.get_current_role() as role');
     const role = roleResult.rows[0]?.role;
 
     if (role !== 'moderator' && role !== 'owner') {

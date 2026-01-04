@@ -21,8 +21,8 @@ export class UserAuthService {
 
   async register(dto: RegisterDto): Promise<{ userId: string }> {
     try {
-      const result = await this.guestPool.query<{ register_user_full: string }>(
-        `SELECT auth.register_user_full($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+      const result = await this.guestPool.query<{ register_user: string }>(
+        `SELECT guest.register_user($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
         [
           dto.email,
           dto.password,
@@ -36,7 +36,7 @@ export class UserAuthService {
         ],
       );
 
-      return { userId: result.rows[0].register_user_full };
+      return { userId: result.rows[0].register_user };
     } catch (error) {
       throw this.mapPgError(error, dto.email);
     }
@@ -44,7 +44,7 @@ export class UserAuthService {
 
   async login(dto: LoginDto): Promise<string> {
     const userResult = await this.guestPool.query<{ id: string; email: string; status: string }>(
-      'SELECT * FROM auth.get_user_for_login($1)',
+      'SELECT * FROM guest.get_user_for_login($1)',
       [dto.email],
     );
 

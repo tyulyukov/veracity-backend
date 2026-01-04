@@ -31,10 +31,10 @@ export class ModeratorsAdminService {
     try {
       const [countResult, listResult] = await Promise.all([
         pool.query<{ count_moderators: string }>(
-          'SELECT auth.count_moderators($1) as count_moderators',
+          'SELECT owner.count_moderators($1) AS count_moderators',
           [search || null],
         ),
-        pool.query<{ email: string }>('SELECT * FROM auth.list_moderators($1, $2, $3)', [
+        pool.query<{ email: string }>('SELECT * FROM owner.list_moderators($1, $2, $3)', [
           search || null,
           limit,
           offset,
@@ -56,7 +56,7 @@ export class ModeratorsAdminService {
   async createModerator(dto: CreateModeratorDto): Promise<ModeratorInfo> {
     const pool = this.pool;
     try {
-      await pool.query('SELECT auth.create_moderator($1, $2)', [dto.email, dto.password]);
+      await pool.query('SELECT owner.create_moderator($1, $2)', [dto.email, dto.password]);
       return { email: dto.email, role: 'moderator' };
     } catch (error) {
       throw this.mapPgError(error, dto.email);
@@ -67,20 +67,8 @@ export class ModeratorsAdminService {
     const pool = this.pool;
 
     try {
-      const roleCheck = await pool.query<{ moderator_exists: boolean }>(
-        'SELECT auth.moderator_exists($1) as moderator_exists',
-        [email],
-      );
-
-      if (!roleCheck.rows[0].moderator_exists) {
-        throw new ModeratorNotFoundError(email);
-      }
-
-      await pool.query('SELECT auth.drop_moderator($1)', [email]);
+      await pool.query('SELECT owner.drop_moderator($1)', [email]);
     } catch (error) {
-      if (error instanceof ModeratorNotFoundError) {
-        throw error;
-      }
       throw this.mapPgError(error, email);
     }
   }
@@ -98,8 +86,11 @@ export class ModeratorsAdminService {
       if (message.includes('Only owner can')) {
         return new ForbiddenOperationError(message);
       }
-      if (message.includes('Cannot drop owner')) {
-        return new ForbiddenOperationError(message);
+      if (message.includes('Moderator does not exist')) {
+        return new ModeratorNotFoundError(email);
+      }
+      if (message.includes('Can only drop moderators')) {
+        return new ModeratorNotFoundError(email);
       }
     }
     return error instanceof Error ? error : new Error(String(error));
