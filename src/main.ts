@@ -2,6 +2,7 @@ import { VersioningType } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { apiReference } from '@scalar/nestjs-api-reference';
+import cookieParser from 'cookie-parser';
 import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module';
 import { AppConfigService } from './common/config/config.service';
@@ -15,6 +16,8 @@ async function bootstrap() {
 
   const configService = app.get(AppConfigService);
 
+  app.use(cookieParser());
+
   app.setGlobalPrefix(API_GLOBAL_PREFIX);
   app.enableVersioning({
     type: VersioningType.URI,
@@ -22,7 +25,7 @@ async function bootstrap() {
   });
 
   app.enableShutdownHooks();
-  app.enableCors();
+  app.enableCors({ credentials: true, origin: true });
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Veracity API')

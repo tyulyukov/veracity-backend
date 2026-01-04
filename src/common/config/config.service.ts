@@ -9,10 +9,18 @@ export interface AppConfig {
 export interface PostgresConfig {
   host: string;
   port: number;
-  username: string;
-  password: string;
   database: string;
   logging: boolean;
+}
+
+export interface JwtConfig {
+  secret: string;
+  expiresIn: string;
+}
+
+export interface OwnerConfig {
+  email: string;
+  password: string;
 }
 
 @Injectable()
@@ -34,10 +42,29 @@ export class AppConfigService {
     return {
       host: this.env.POSTGRES_HOST,
       port: this.env.POSTGRES_PORT,
-      username: this.env.POSTGRES_USERNAME,
-      password: this.env.POSTGRES_PASSWORD,
       database: this.env.POSTGRES_DATABASE,
       logging: this.env.POSTGRES_LOGGING,
+    };
+  }
+
+  get userJwt(): JwtConfig {
+    return {
+      secret: this.env.USER_JWT_SECRET,
+      expiresIn: this.env.USER_JWT_EXPIRES_IN,
+    };
+  }
+
+  get adminJwt(): JwtConfig {
+    return {
+      secret: this.env.ADMIN_JWT_SECRET,
+      expiresIn: this.env.ADMIN_JWT_EXPIRES_IN,
+    };
+  }
+
+  get owner(): OwnerConfig {
+    return {
+      email: this.env.OWNER_EMAIL,
+      password: this.env.OWNER_PASSWORD,
     };
   }
 

@@ -1,0 +1,43 @@
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsArray, IsObject, IsOptional, IsString, IsUrl, IsUUID, MaxLength } from 'class-validator';
+
+export class UpdateMeDto {
+  @ApiPropertyOptional({ example: 'John' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  firstName?: string;
+
+  @ApiPropertyOptional({ example: 'Doe' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  lastName?: string;
+
+  @ApiPropertyOptional({ example: 'https://example.com/avatar.jpg' })
+  @IsOptional()
+  @IsUrl()
+  avatarUrl?: string;
+
+  @ApiPropertyOptional({ example: 'Software Engineer' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  position?: string;
+
+  @ApiPropertyOptional({ example: { telegram: '@johndoe' } })
+  @IsOptional()
+  @IsObject()
+  contactInfo?: Record<string, string>;
+
+  @ApiPropertyOptional({ example: 'Experienced developer' })
+  @IsOptional()
+  @IsString()
+  shortDescription?: string;
+
+  @ApiPropertyOptional({ type: [String] })
+  @IsOptional()
+  @IsArray()
+  @IsUUID('4', { each: true })
+  interestIds?: string[];
+}

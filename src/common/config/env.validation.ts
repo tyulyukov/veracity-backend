@@ -50,6 +50,30 @@ export class EnvVariables {
   @IsBoolean()
   @Transform(({ value }) => value === 'true')
   POSTGRES_LOGGING: boolean = false;
+
+  @IsString()
+  @IsNotEmpty()
+  USER_JWT_SECRET: string;
+
+  @IsString()
+  @IsNotEmpty()
+  USER_JWT_EXPIRES_IN: string = '7d';
+
+  @IsString()
+  @IsNotEmpty()
+  ADMIN_JWT_SECRET: string;
+
+  @IsString()
+  @IsNotEmpty()
+  ADMIN_JWT_EXPIRES_IN: string = '8h';
+
+  @IsString()
+  @IsNotEmpty()
+  OWNER_EMAIL: string;
+
+  @IsString()
+  @IsNotEmpty()
+  OWNER_PASSWORD: string;
 }
 
 export function validateEnv(config: Record<string, unknown>): EnvVariables {
