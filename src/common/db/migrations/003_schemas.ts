@@ -4,6 +4,7 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
   pgm.sql(`
     REVOKE ALL ON SCHEMA public FROM PUBLIC;
     REVOKE CREATE ON SCHEMA public FROM PUBLIC;
+    GRANT USAGE ON SCHEMA public TO guest, standard_user, speaker, moderator, owner;
 
     CREATE SCHEMA IF NOT EXISTS general;
     CREATE SCHEMA IF NOT EXISTS guest;

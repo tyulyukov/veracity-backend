@@ -2,14 +2,20 @@ import type { MigrationBuilder } from 'node-pg-migrate';
 
 export async function up(pgm: MigrationBuilder): Promise<void> {
   pgm.sql(`
+    CREATE OR REPLACE FUNCTION general.is_session_user_active()
+    RETURNS BOOLEAN AS $$
+    BEGIN
+      RETURN EXISTS (SELECT 1 FROM users WHERE email = session_user AND status = 'active');
+    END;
+    $$ LANGUAGE plpgsql STABLE SECURITY DEFINER;
+
+    GRANT EXECUTE ON FUNCTION general.is_session_user_active() TO standard_user, speaker;
+
     CREATE POLICY users_select_self ON users FOR SELECT TO standard_user, speaker
       USING (email = session_user);
 
     CREATE POLICY users_select_active ON users FOR SELECT TO standard_user, speaker
-      USING (
-        status = 'active'
-        AND EXISTS (SELECT 1 FROM users WHERE email = session_user AND status = 'active')
-      );
+      USING (status = 'active' AND general.is_session_user_active());
 
     CREATE POLICY user_interests_select ON user_interests FOR SELECT TO standard_user, speaker
       USING (EXISTS (SELECT 1 FROM users WHERE id = user_id));
@@ -102,5 +108,8 @@ export async function down(pgm: MigrationBuilder): Promise<void> {
     DROP POLICY IF EXISTS user_interests_select ON user_interests;
     DROP POLICY IF EXISTS users_select_active ON users;
     DROP POLICY IF EXISTS users_select_self ON users;
+
+    REVOKE EXECUTE ON FUNCTION general.is_session_user_active() FROM standard_user, speaker;
+    DROP FUNCTION IF EXISTS general.is_session_user_active();
   `);
 }

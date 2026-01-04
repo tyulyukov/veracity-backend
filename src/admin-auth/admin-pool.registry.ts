@@ -30,18 +30,12 @@ export class AdminPoolRegistry implements OnModuleDestroy {
   }
 
   async createPoolForAdmin(email: string, password: string): Promise<Pool> {
-    const existing = this.pools.get(email);
-    if (existing) {
-      existing.lastAccess = new Date();
-      return existing.pool;
-    }
-
     const existingLock = this.locks.get(email);
     if (existingLock) {
       return existingLock;
     }
 
-    const promise = this.createPool(email, password);
+    const promise = this.createPoolWithCredentialCheck(email, password);
     this.locks.set(email, promise);
 
     try {
@@ -49,6 +43,34 @@ export class AdminPoolRegistry implements OnModuleDestroy {
     } finally {
       this.locks.delete(email);
     }
+  }
+
+  private async createPoolWithCredentialCheck(email: string, password: string): Promise<Pool> {
+    const existing = this.pools.get(email);
+
+    if (existing) {
+      const testPool = new Pool({
+        host: this.configService.postgres.host,
+        port: this.configService.postgres.port,
+        database: this.configService.postgres.database,
+        user: email,
+        password: password,
+        max: 1,
+        idleTimeoutMillis: 1000,
+      });
+
+      try {
+        await testPool.query('SELECT 1');
+        await testPool.end();
+        existing.lastAccess = new Date();
+        return existing.pool;
+      } catch {
+        await testPool.end().catch(() => {});
+        throw new Error('Invalid credentials');
+      }
+    }
+
+    return this.createPool(email, password);
   }
 
   private async createPool(email: string, password: string): Promise<Pool> {

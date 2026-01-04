@@ -8,6 +8,6 @@ export class UsersQueryDto extends CursorPaginationDto {
   @IsOptional()
   @IsArray()
   @IsUUID('4', { each: true })
-  @Transform(({ value }) => (Array.isArray(value) ? value : [value]))
+  @Transform(({ value }) => (value ? (Array.isArray(value) ? value : [value]) : undefined))
   interestIds?: string[];
 }

@@ -1,13 +1,15 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Inject } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { HealthCheck, HealthCheckService, TypeOrmHealthIndicator } from '@nestjs/terminus';
+import { HealthCheck, HealthCheckService, HealthIndicatorResult } from '@nestjs/terminus';
+import { Pool } from 'pg';
+import { PG_GUEST_POOL } from '@/common/db/pg-guest.module';
 
 @ApiTags('Health')
 @Controller()
 export class HealthController {
   constructor(
     private readonly health: HealthCheckService,
-    private readonly db: TypeOrmHealthIndicator,
+    @Inject(PG_GUEST_POOL) private readonly pool: Pool,
   ) {}
 
   @Get('healthz')
@@ -20,6 +22,15 @@ export class HealthController {
   @ApiOperation({ summary: 'Readiness probe' })
   @HealthCheck()
   readiness() {
-    return this.health.check([() => this.db.pingCheck('database')]);
+    return this.health.check([
+      async (): Promise<HealthIndicatorResult> => {
+        try {
+          await this.pool.query('SELECT 1');
+          return { database: { status: 'up' } };
+        } catch {
+          return { database: { status: 'down' } };
+        }
+      },
+    ]);
   }
 }

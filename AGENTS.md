@@ -92,3 +92,10 @@ You are an AI coding agent working in this repository. Follow these rules strict
 
 ## Environment Variables
 - keep .env.example up to date when adding a new env variable
+
+## Integration Testing
+- When creating or modifying a feature, create or update the corresponding integration tests in `test/*.e2e-spec.ts`.
+- Run `npm run test:integration` after making changes to ensure all tests pass.
+- Integration tests use Testcontainers to spin up a fresh PostgreSQL container and run migrations from `src/common/db/migrations/`.
+- Test files are organized per module (e.g., `test/user-auth.e2e-spec.ts`, `test/admin-users.e2e-spec.ts`).
+- Use helpers from `test/setup/auth.helper.ts` for authentication in tests.
