@@ -57,4 +57,3 @@ export async function down(pgm: MigrationBuilder): Promise<void> {
     DROP INDEX IF EXISTS idx_users_status;
   `);
 }
-

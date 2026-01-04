@@ -74,6 +74,20 @@ export class EnvVariables {
   @IsString()
   @IsNotEmpty()
   OWNER_PASSWORD: string;
+
+  @IsString()
+  @IsNotEmpty()
+  RESEND_API_KEY: string;
+
+  @IsString()
+  @IsNotEmpty()
+  RESEND_FROM_EMAIL: string;
+
+  @IsInt()
+  @Min(1)
+  @Max(60)
+  @Transform(({ value }) => parseInt(value, 10))
+  OTP_EXPIRES_IN_MINUTES: number = 10;
 }
 
 export function validateEnv(config: Record<string, unknown>): EnvVariables {

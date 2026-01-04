@@ -41,4 +41,3 @@ export async function down(pgm: MigrationBuilder): Promise<void> {
     GRANT USAGE ON SCHEMA public TO PUBLIC;
   `);
 }
-

@@ -23,4 +23,3 @@ describe('Interests (e2e)', () => {
     });
   });
 });
-

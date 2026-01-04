@@ -9,4 +9,3 @@ export class UserNotActiveError extends AppError {
     });
   }
 }
-

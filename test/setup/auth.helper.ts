@@ -46,4 +46,3 @@ export async function getInterestIds(app: INestApplication): Promise<string[]> {
   const res = await request(app.getHttpServer()).get('/api/v1/interests').expect(200);
   return res.body.map((i: { id: string }) => i.id);
 }
-

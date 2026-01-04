@@ -73,7 +73,6 @@ export async function runMigrations(databaseUrl: string): Promise<void> {
 
       await pool.query('INSERT INTO pgmigrations (name) VALUES ($1)', [migrationName]);
     }
-
   } finally {
     await pool.end();
   }

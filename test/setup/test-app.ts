@@ -4,10 +4,20 @@ import { PostgreSqlContainer, StartedPostgreSqlContainer } from '@testcontainers
 import cookieParser from 'cookie-parser';
 import { AppModule } from '@/app.module';
 import { API_DEFAULT_VERSION, API_GLOBAL_PREFIX } from '@/common/const/app.const';
+import { EMAIL_PROVIDER, EmailProvider } from '@/common/email/email.interface';
 import { runMigrations } from './run-migrations';
 
 let container: StartedPostgreSqlContainer;
 let app: INestApplication;
+
+export const mockEmailProvider: EmailProvider & {
+  sentEmails: Array<{ to: string; subject: string; html: string }>;
+} = {
+  sentEmails: [],
+  async send(options) {
+    this.sentEmails.push(options);
+  },
+};
 
 export async function setupTestApp(): Promise<INestApplication> {
   container = await new PostgreSqlContainer('postgres:18-alpine')
@@ -20,7 +30,7 @@ export async function setupTestApp(): Promise<INestApplication> {
 
   const testEnv = {
     NODE_ENV: 'local',
-    PORT: '7007',
+    PORT: '8008',
     POSTGRES_HOST: container.getHost(),
     POSTGRES_PORT: container.getPort().toString(),
     POSTGRES_USERNAME: 'postgres',
@@ -34,15 +44,23 @@ export async function setupTestApp(): Promise<INestApplication> {
     OWNER_EMAIL: 'owner@test.com',
     OWNER_PASSWORD: 'ownerpassword123',
     DATABASE_URL: databaseUrl,
+    RESEND_API_KEY: 'test-resend-api-key',
+    RESEND_FROM_EMAIL: 'noreply@test.com',
+    OTP_EXPIRES_IN_MINUTES: '10',
   };
 
   Object.assign(process.env, testEnv);
 
   await runMigrations(databaseUrl);
 
+  mockEmailProvider.sentEmails = [];
+
   const moduleFixture: TestingModule = await Test.createTestingModule({
     imports: [AppModule],
-  }).compile();
+  })
+    .overrideProvider(EMAIL_PROVIDER)
+    .useValue(mockEmailProvider)
+    .compile();
 
   app = moduleFixture.createNestApplication();
 

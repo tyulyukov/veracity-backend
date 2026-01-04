@@ -51,13 +51,10 @@ describe('Admin Auth (e2e)', () => {
 
   describe('POST /admin/auth/logout', () => {
     it('should clear cookie on logout', async () => {
-      const res = await request(app.getHttpServer())
-        .post('/api/v1/admin/auth/logout')
-        .expect(200);
+      const res = await request(app.getHttpServer()).post('/api/v1/admin/auth/logout').expect(200);
 
       expect(res.body).toEqual({ message: 'Logout successful' });
       expect(res.headers['set-cookie'][0]).toContain('admin_access_token=;');
     });
   });
 });
-

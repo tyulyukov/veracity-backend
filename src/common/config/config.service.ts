@@ -23,6 +23,15 @@ export interface OwnerConfig {
   password: string;
 }
 
+export interface ResendConfig {
+  apiKey: string;
+  fromEmail: string;
+}
+
+export interface OtpConfig {
+  expiresInMinutes: number;
+}
+
 @Injectable()
 export class AppConfigService {
   private readonly env: EnvVariables;
@@ -74,5 +83,18 @@ export class AppConfigService {
 
   get isProduction(): boolean {
     return this.env.NODE_ENV === Environment.PRODUCTION;
+  }
+
+  get resend(): ResendConfig {
+    return {
+      apiKey: this.env.RESEND_API_KEY,
+      fromEmail: this.env.RESEND_FROM_EMAIL,
+    };
+  }
+
+  get otp(): OtpConfig {
+    return {
+      expiresInMinutes: this.env.OTP_EXPIRES_IN_MINUTES,
+    };
   }
 }

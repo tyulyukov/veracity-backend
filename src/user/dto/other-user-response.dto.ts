@@ -34,4 +34,3 @@ export class OtherUserResponseDto {
   @ApiProperty({ type: [String] })
   interests: { id: string; name: string }[];
 }
-

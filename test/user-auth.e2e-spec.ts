@@ -1,6 +1,6 @@
 import request from 'supertest';
 import { INestApplication } from '@nestjs/common';
-import { setupTestApp, teardownTestApp } from './setup/test-app';
+import { setupTestApp, teardownTestApp, mockEmailProvider } from './setup/test-app';
 import { getInterestIds } from './setup/auth.helper';
 
 describe('User Auth (e2e)', () => {
@@ -17,7 +17,7 @@ describe('User Auth (e2e)', () => {
   });
 
   describe('POST /users/auth/register', () => {
-    it('should register a new user', async () => {
+    it('should register a new user and set cookie', async () => {
       const res = await request(app.getHttpServer())
         .post('/api/v1/users/auth/register')
         .send({
@@ -30,6 +30,8 @@ describe('User Auth (e2e)', () => {
         .expect(201);
 
       expect(res.body).toHaveProperty('userId');
+      expect(res.headers['set-cookie']).toBeDefined();
+      expect(res.headers['set-cookie'][0]).toContain('user_access_token');
     });
 
     it('should reject duplicate email', async () => {
@@ -111,13 +113,167 @@ describe('User Auth (e2e)', () => {
 
   describe('POST /users/auth/logout', () => {
     it('should clear cookie on logout', async () => {
-      const res = await request(app.getHttpServer())
-        .post('/api/v1/users/auth/logout')
-        .expect(200);
+      const res = await request(app.getHttpServer()).post('/api/v1/users/auth/logout').expect(200);
 
       expect(res.body).toEqual({ message: 'Logout successful' });
       expect(res.headers['set-cookie'][0]).toContain('user_access_token=;');
     });
   });
-});
 
+  describe('POST /users/auth/forgot-password', () => {
+    beforeEach(() => {
+      mockEmailProvider.sentEmails = [];
+    });
+
+    it('should send OTP for existing user', async () => {
+      const email = 'forgotpassword1@test.com';
+      await request(app.getHttpServer())
+        .post('/api/v1/users/auth/register')
+        .send({
+          email,
+          password: 'password123',
+          firstName: 'Forgot',
+          lastName: 'Password',
+          interestIds: interestIds.slice(0, 1),
+        });
+
+      const res = await request(app.getHttpServer())
+        .post('/api/v1/users/auth/forgot-password')
+        .send({ email })
+        .expect(200);
+
+      expect(res.body).toEqual({ message: 'If an account exists, an OTP has been sent' });
+      expect(mockEmailProvider.sentEmails).toHaveLength(1);
+      expect(mockEmailProvider.sentEmails[0].to).toBe(email);
+    });
+
+    it('should return 404 for non-existing user', async () => {
+      await request(app.getHttpServer())
+        .post('/api/v1/users/auth/forgot-password')
+        .send({ email: 'nonexistent@test.com' })
+        .expect(404);
+    });
+
+    it('should throttle rapid OTP requests', async () => {
+      const email = 'forgotpassword2@test.com';
+      await request(app.getHttpServer())
+        .post('/api/v1/users/auth/register')
+        .send({
+          email,
+          password: 'password123',
+          firstName: 'Throttle',
+          lastName: 'User',
+          interestIds: interestIds.slice(0, 1),
+        });
+
+      await request(app.getHttpServer())
+        .post('/api/v1/users/auth/forgot-password')
+        .send({ email })
+        .expect(200);
+
+      await request(app.getHttpServer())
+        .post('/api/v1/users/auth/forgot-password')
+        .send({ email })
+        .expect(429);
+    });
+  });
+
+  describe('POST /users/auth/reset-password', () => {
+    beforeEach(() => {
+      mockEmailProvider.sentEmails = [];
+    });
+
+    it('should reset password with valid OTP', async () => {
+      const email = 'resetpassword1@test.com';
+      await request(app.getHttpServer())
+        .post('/api/v1/users/auth/register')
+        .send({
+          email,
+          password: 'oldpassword123',
+          firstName: 'Reset',
+          lastName: 'Password',
+          interestIds: interestIds.slice(0, 1),
+        });
+
+      await request(app.getHttpServer())
+        .post('/api/v1/users/auth/forgot-password')
+        .send({ email })
+        .expect(200);
+
+      const emailHtml = mockEmailProvider.sentEmails[0].html;
+      const codeMatch = emailHtml.match(/letter-spacing: 12px[^>]*>\s*(\d{4})\s*</);
+      const otpCode = codeMatch ? codeMatch[1] : '';
+
+      const res = await request(app.getHttpServer())
+        .post('/api/v1/users/auth/reset-password')
+        .send({ email, code: otpCode, newPassword: 'newpassword123' })
+        .expect(200);
+
+      expect(res.body).toEqual({ message: 'Password reset successful' });
+
+      await request(app.getHttpServer())
+        .post('/api/v1/users/auth/login')
+        .send({ email, password: 'newpassword123' })
+        .expect(200);
+    });
+
+    it('should reject invalid OTP code', async () => {
+      const email = 'resetpassword2@test.com';
+      await request(app.getHttpServer())
+        .post('/api/v1/users/auth/register')
+        .send({
+          email,
+          password: 'password123',
+          firstName: 'Invalid',
+          lastName: 'Otp',
+          interestIds: interestIds.slice(0, 1),
+        });
+
+      await request(app.getHttpServer())
+        .post('/api/v1/users/auth/forgot-password')
+        .send({ email })
+        .expect(200);
+
+      await request(app.getHttpServer())
+        .post('/api/v1/users/auth/reset-password')
+        .send({ email, code: '0000', newPassword: 'newpassword123' })
+        .expect(400);
+    });
+
+    it('should reject expired or non-existent OTP', async () => {
+      await request(app.getHttpServer())
+        .post('/api/v1/users/auth/reset-password')
+        .send({ email: 'nonotp@test.com', code: '1234', newPassword: 'newpassword123' })
+        .expect(400);
+    });
+
+    it('should throttle after too many failed attempts', async () => {
+      const email = 'resetthrottle@test.com';
+      await request(app.getHttpServer())
+        .post('/api/v1/users/auth/register')
+        .send({
+          email,
+          password: 'password123',
+          firstName: 'Throttle',
+          lastName: 'Test',
+          interestIds: interestIds.slice(0, 1),
+        });
+
+      await request(app.getHttpServer())
+        .post('/api/v1/users/auth/forgot-password')
+        .send({ email })
+        .expect(200);
+
+      for (let i = 0; i < 5; i++) {
+        await request(app.getHttpServer())
+          .post('/api/v1/users/auth/reset-password')
+          .send({ email, code: '0000', newPassword: 'newpassword123' });
+      }
+
+      await request(app.getHttpServer())
+        .post('/api/v1/users/auth/reset-password')
+        .send({ email, code: '0000', newPassword: 'newpassword123' })
+        .expect(429);
+    });
+  });
+});

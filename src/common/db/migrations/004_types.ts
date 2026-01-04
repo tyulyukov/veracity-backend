@@ -15,4 +15,3 @@ export async function down(pgm: MigrationBuilder): Promise<void> {
     DROP TYPE IF EXISTS user_status;
   `);
 }
-
