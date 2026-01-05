@@ -38,7 +38,7 @@ interface DbOtherUserRow {
   interests: Interest[] | string;
 }
 
-const PAGE_SIZE = 20;
+const DEFAULT_PAGE_SIZE = 20;
 
 @Injectable()
 export class UserService {
@@ -132,12 +132,13 @@ export class UserService {
       }
 
       const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+      const pageSize = query.limit ?? DEFAULT_PAGE_SIZE;
 
       const sql = `
         SELECT * FROM "user".other_active_users_v
         ${whereClause}
         ORDER BY created_at DESC, id DESC
-        LIMIT ${PAGE_SIZE + 1}
+        LIMIT ${pageSize + 1}
       `;
 
       const result = await this.pool.query<DbOtherUserRow>(sql, params);
@@ -145,7 +146,7 @@ export class UserService {
       let nextCursor: string | null = null;
       const rows = result.rows;
 
-      if (rows.length > PAGE_SIZE) {
+      if (rows.length > pageSize) {
         rows.pop();
         const lastRow = rows[rows.length - 1];
         nextCursor = `${lastRow.created_at.toISOString()},${lastRow.id}`;

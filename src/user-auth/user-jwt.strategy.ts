@@ -11,8 +11,13 @@ import { UserPoolRegistry } from './user-pool.registry';
 
 interface JwtPayload {
   sub: string;
+}
+
+interface DbUserRow {
+  id: string;
   email: string;
   status: string;
+  role: string;
 }
 
 export const CLS_USER_POOL = 'userPool';
@@ -31,7 +36,7 @@ export class UserJwtStrategy extends PassportStrategy(Strategy, 'user-jwt') {
     });
   }
 
-  validate(payload: JwtPayload): CurrentUserPayload {
+  async validate(payload: JwtPayload): Promise<CurrentUserPayload> {
     if (!this.userPoolRegistry.hasPool(payload.sub)) {
       throw new SessionExpiredError();
     }
@@ -39,10 +44,22 @@ export class UserJwtStrategy extends PassportStrategy(Strategy, 'user-jwt') {
     const pool = this.userPoolRegistry.getPoolById(payload.sub);
     this.cls.set(CLS_USER_POOL, pool);
 
+    const result = await pool.query<DbUserRow>(
+      'SELECT id, email, status, role FROM users WHERE id = $1',
+      [payload.sub],
+    );
+
+    if (result.rows.length === 0) {
+      throw new SessionExpiredError();
+    }
+
+    const user = result.rows[0];
+
     return {
-      userId: payload.sub,
-      email: payload.email,
-      status: payload.status,
+      userId: user.id,
+      email: user.email,
+      status: user.status,
+      role: user.role,
     };
   }
 }

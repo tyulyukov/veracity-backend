@@ -5,6 +5,12 @@ import cookieParser from 'cookie-parser';
 import { AppModule } from '@/app.module';
 import { API_DEFAULT_VERSION, API_GLOBAL_PREFIX } from '@/common/const/app.const';
 import { EMAIL_PROVIDER, EmailProvider } from '@/common/email/email.interface';
+import {
+  STORAGE_PROVIDER,
+  StorageProvider,
+  GenerateUploadUrlParams,
+  UploadUrlResult,
+} from '@/common/storage/storage.interface';
 import { runMigrations } from './run-migrations';
 
 let container: StartedPostgreSqlContainer;
@@ -16,6 +22,20 @@ export const mockEmailProvider: EmailProvider & {
   sentEmails: [],
   async send(options) {
     this.sentEmails.push(options);
+  },
+};
+
+export const mockStorageProvider: StorageProvider & {
+  uploadRequests: GenerateUploadUrlParams[];
+} = {
+  uploadRequests: [],
+  async generateUploadUrl(params: GenerateUploadUrlParams): Promise<UploadUrlResult> {
+    this.uploadRequests.push(params);
+    const key = `local/${params.entity}/${params.entityId}/${params.field}/${params.filename}`;
+    return {
+      uploadUrl: `https://test.r2.cloudflarestorage.com/veracity-test/${key}?X-Amz-Signature=mock`,
+      publicUrl: `https://storage.test.com/${key}`,
+    };
   },
 };
 
@@ -47,6 +67,11 @@ export async function setupTestApp(): Promise<INestApplication> {
     RESEND_API_KEY: 'test-resend-api-key',
     RESEND_FROM_EMAIL: 'noreply@test.com',
     OTP_EXPIRES_IN_MINUTES: '10',
+    CLOUDFLARE_R2_PUBLIC_URL: 'https://storage.test.com',
+    CLOUDFLARE_R2_API_URL: 'https://test.r2.cloudflarestorage.com',
+    CLOUDFLARE_R2_ACCESS_KEY_ID: 'test-access-key-id',
+    CLOUDFLARE_R2_SECRET_ACCESS_KEY: 'test-secret-access-key',
+    CLOUDFLARE_R2_BUCKET: 'veracity-test',
   };
 
   Object.assign(process.env, testEnv);
@@ -54,12 +79,15 @@ export async function setupTestApp(): Promise<INestApplication> {
   await runMigrations(databaseUrl);
 
   mockEmailProvider.sentEmails = [];
+  mockStorageProvider.uploadRequests = [];
 
   const moduleFixture: TestingModule = await Test.createTestingModule({
     imports: [AppModule],
   })
     .overrideProvider(EMAIL_PROVIDER)
     .useValue(mockEmailProvider)
+    .overrideProvider(STORAGE_PROVIDER)
+    .useValue(mockStorageProvider)
     .compile();
 
   app = moduleFixture.createNestApplication();

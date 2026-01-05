@@ -88,6 +88,26 @@ export class EnvVariables {
   @Max(60)
   @Transform(({ value }) => parseInt(value, 10))
   OTP_EXPIRES_IN_MINUTES: number = 10;
+
+  @IsString()
+  @IsNotEmpty()
+  CLOUDFLARE_R2_PUBLIC_URL: string;
+
+  @IsString()
+  @IsNotEmpty()
+  CLOUDFLARE_R2_API_URL: string;
+
+  @IsString()
+  @IsNotEmpty()
+  CLOUDFLARE_R2_ACCESS_KEY_ID: string;
+
+  @IsString()
+  @IsNotEmpty()
+  CLOUDFLARE_R2_SECRET_ACCESS_KEY: string;
+
+  @IsString()
+  @IsNotEmpty()
+  CLOUDFLARE_R2_BUCKET: string = 'veracity';
 }
 
 export function validateEnv(config: Record<string, unknown>): EnvVariables {

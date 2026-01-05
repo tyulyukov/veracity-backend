@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsArray, IsOptional, IsUUID } from 'class-validator';
+import { IsArray, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { CursorPaginationDto } from '@/common/dto/cursor-pagination.dto';
 
@@ -10,4 +10,10 @@ export class UsersQueryDto extends CursorPaginationDto {
   @IsUUID('4', { each: true })
   @Transform(({ value }) => (value ? (Array.isArray(value) ? value : [value]) : undefined))
   interestIds?: string[];
+
+  @ApiPropertyOptional({ description: 'Search by name or email (case-insensitive)' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  search?: string;
 }

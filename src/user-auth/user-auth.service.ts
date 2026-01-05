@@ -46,13 +46,9 @@ export class UserAuthService {
 
       await this.userPoolRegistry.createPoolForUser(userId, dto.email, dto.password);
 
-      const payload = {
-        sub: userId,
-        email: dto.email,
-        status: 'active',
-      };
+      const payload = { sub: userId };
 
-      const accessToken = this.jwtService.sign(payload as Record<string, unknown>, {
+      const accessToken = this.jwtService.sign(payload, {
         secret: this.configService.userJwt.secret,
         expiresIn: this.configService.userJwt.expiresIn as `${number}d`,
       });
@@ -64,7 +60,7 @@ export class UserAuthService {
   }
 
   async login(dto: LoginDto): Promise<string> {
-    const userResult = await this.guestPool.query<{ id: string; email: string; status: string }>(
+    const userResult = await this.guestPool.query<{ id: string }>(
       'SELECT * FROM guest.get_user_for_login($1)',
       [dto.email],
     );
@@ -81,13 +77,9 @@ export class UserAuthService {
       throw new InvalidCredentialsError();
     }
 
-    const payload = {
-      sub: user.id,
-      email: user.email,
-      status: user.status,
-    };
+    const payload = { sub: user.id };
 
-    return this.jwtService.sign(payload as Record<string, unknown>, {
+    return this.jwtService.sign(payload, {
       secret: this.configService.userJwt.secret,
       expiresIn: this.configService.userJwt.expiresIn as `${number}d`,
     });

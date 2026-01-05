@@ -6,16 +6,19 @@ import { PgGuestModule } from './common/db/pg-guest.module';
 import { AppErrorFilter } from './common/filter/app-error.filter';
 import { HealthModule } from './common/health/health.module';
 import { LoggerModule } from './common/logger/logger.module';
+import { StorageModule } from './common/storage/storage.module';
 import { InterestModule } from './interest/interest.module';
 import { UserAuthModule } from './user-auth/user-auth.module';
 import { AdminAuthModule } from './admin-auth/admin-auth.module';
 import { UserModule } from './user/user.module';
 import { AdminModule } from './admin/admin.module';
+import { StorageFeatureModule } from './storage/storage.module';
 
 @Module({
   imports: [
     AppConfigModule,
     LoggerModule,
+    StorageModule,
     ClsModule,
     PgGuestModule,
     HealthModule,
@@ -24,6 +27,7 @@ import { AdminModule } from './admin/admin.module';
     AdminAuthModule,
     UserModule,
     AdminModule,
+    StorageFeatureModule,
   ],
   providers: [
     {

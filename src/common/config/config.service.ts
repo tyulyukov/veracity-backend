@@ -32,6 +32,14 @@ export interface OtpConfig {
   expiresInMinutes: number;
 }
 
+export interface R2Config {
+  publicUrl: string;
+  apiUrl: string;
+  accessKeyId: string;
+  secretAccessKey: string;
+  bucket: string;
+}
+
 @Injectable()
 export class AppConfigService {
   private readonly env: EnvVariables;
@@ -95,6 +103,16 @@ export class AppConfigService {
   get otp(): OtpConfig {
     return {
       expiresInMinutes: this.env.OTP_EXPIRES_IN_MINUTES,
+    };
+  }
+
+  get r2(): R2Config {
+    return {
+      publicUrl: this.env.CLOUDFLARE_R2_PUBLIC_URL,
+      apiUrl: this.env.CLOUDFLARE_R2_API_URL,
+      accessKeyId: this.env.CLOUDFLARE_R2_ACCESS_KEY_ID,
+      secretAccessKey: this.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY,
+      bucket: this.env.CLOUDFLARE_R2_BUCKET,
     };
   }
 }

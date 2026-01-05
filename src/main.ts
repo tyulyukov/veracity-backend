@@ -7,6 +7,7 @@ import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module';
 import { AppConfigService } from './common/config/config.service';
 import { API_DEFAULT_VERSION, API_GLOBAL_PREFIX } from './common/const/app.const';
+import { Request, Response } from 'express';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
@@ -41,6 +42,7 @@ async function bootstrap() {
       sources: [{ content: document }],
     }),
   );
+  app.use(`/${API_GLOBAL_PREFIX}/docs.json`, (req: Request, res: Response) => res.send(document));
 
   const port = configService.app.port;
   await app.listen(port);

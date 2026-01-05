@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
+import { IsInt, IsOptional, Max, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class OffsetPaginationDto {
@@ -17,10 +17,4 @@ export class OffsetPaginationDto {
   @Min(1)
   @Max(100)
   limit?: number = 20;
-
-  @ApiPropertyOptional({ description: 'Case-insensitive search by email' })
-  @IsOptional()
-  @IsString()
-  @MaxLength(255)
-  search?: string;
 }
