@@ -97,6 +97,24 @@ export class UserService {
     }
   }
 
+  async findOtherUserById(userId: string): Promise<OtherUserWithInterests> {
+    try {
+      const result = await this.pool.query<DbOtherUserRow>(
+        `SELECT * FROM "user".other_active_users_v WHERE id = $1`,
+        [userId],
+      );
+
+      if (result.rows.length === 0) {
+        throw new UserNotFoundError(userId);
+      }
+
+      return this.mapOtherUserRow(result.rows[0]);
+    } catch (error) {
+      if (error instanceof UserNotFoundError) throw error;
+      throw this.mapPgError(error);
+    }
+  }
+
   async findActiveUsers(
     query: UsersQueryDto,
   ): Promise<{ users: OtherUserWithInterests[]; nextCursor: string | null }> {

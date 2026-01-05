@@ -1,16 +1,13 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { AppConfigService } from '@/common/config/config.service';
 import { buildStoragePath } from './storage-path.builder';
 import {
-  GenerateUploadUrlParams,
-  UploadUrlResult,
+  UploadFileParams,
+  UploadFileResult,
   StorageProvider,
   STORAGE_PROVIDER,
 } from './storage.interface';
-
-const PRESIGNED_URL_EXPIRES_IN_SECONDS = 300;
 
 @Injectable()
 export class R2StorageProvider implements StorageProvider {
@@ -28,7 +25,7 @@ export class R2StorageProvider implements StorageProvider {
     });
   }
 
-  async generateUploadUrl(params: GenerateUploadUrlParams): Promise<UploadUrlResult> {
+  async uploadFile(params: UploadFileParams): Promise<UploadFileResult> {
     const key = buildStoragePath({
       env: this.config.app.nodeEnv,
       entity: params.entity,
@@ -40,17 +37,13 @@ export class R2StorageProvider implements StorageProvider {
     const command = new PutObjectCommand({
       Bucket: this.config.r2.bucket,
       Key: key,
+      Body: params.buffer,
       ContentType: params.contentType,
     });
 
-    const uploadUrl = await getSignedUrl(this.s3Client, command, {
-      expiresIn: PRESIGNED_URL_EXPIRES_IN_SECONDS,
-      signableHeaders: new Set(['content-type']),
-    });
+    await this.s3Client.send(command);
 
-    const publicUrl = `${this.config.r2.publicUrl}/${key}`;
-
-    return { uploadUrl, publicUrl };
+    return { path: key };
   }
 }
 
@@ -58,7 +51,7 @@ export class R2StorageProvider implements StorageProvider {
 export class StorageService {
   constructor(@Inject(STORAGE_PROVIDER) private readonly provider: StorageProvider) {}
 
-  async generateUploadUrl(params: GenerateUploadUrlParams): Promise<UploadUrlResult> {
-    return this.provider.generateUploadUrl(params);
+  async uploadFile(params: UploadFileParams): Promise<UploadFileResult> {
+    return this.provider.uploadFile(params);
   }
 }

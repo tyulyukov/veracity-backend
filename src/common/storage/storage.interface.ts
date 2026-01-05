@@ -1,20 +1,20 @@
 import { StorageEntity, StorageField } from './storage-path.builder';
 
-export interface GenerateUploadUrlParams {
+export interface UploadFileParams {
   entity: StorageEntity;
   entityId: string;
   field: StorageField;
   filename: string;
+  buffer: Buffer;
   contentType: string;
 }
 
-export interface UploadUrlResult {
-  uploadUrl: string;
-  publicUrl: string;
+export interface UploadFileResult {
+  path: string;
 }
 
 export interface StorageProvider {
-  generateUploadUrl(params: GenerateUploadUrlParams): Promise<UploadUrlResult>;
+  uploadFile(params: UploadFileParams): Promise<UploadFileResult>;
 }
 
 export const STORAGE_PROVIDER = Symbol('STORAGE_PROVIDER');

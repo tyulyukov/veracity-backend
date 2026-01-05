@@ -7,6 +7,9 @@ COPY package*.json ./
 RUN npm ci
 
 COPY . .
+
+RUN apk add --no-cache build-base vips-dev
+
 RUN npm run build
 
 # Production stage

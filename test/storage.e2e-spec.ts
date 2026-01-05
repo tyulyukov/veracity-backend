@@ -29,125 +29,116 @@ describe('Storage (e2e)', () => {
     await teardownTestApp();
   });
 
-  describe('POST /storage/upload-url', () => {
-    it('should generate presigned upload URL for own avatar', async () => {
-      const initialCount = mockStorageProvider.uploadRequests.length;
+  describe('POST /storage/upload', () => {
+    it('should upload avatar image for authenticated user', async () => {
+      const initialCount = mockStorageProvider.uploadedFiles.length;
+      const imageBuffer = createTestImageBuffer();
 
       const res = await request(app.getHttpServer())
-        .post('/api/v1/storage/upload-url')
+        .post('/api/v1/storage/upload')
         .set('Cookie', userCookies)
-        .send({
-          entity: 'users',
-          entityId: userId,
-          field: 'avatar',
-          filename: 'profile.jpg',
-          contentType: 'image/jpeg',
-        })
+        .field('entity', 'users')
+        .field('entityId', userId)
+        .field('field', 'avatar')
+        .attach('file', imageBuffer, 'test.jpg')
         .expect(201);
 
-      expect(res.body).toHaveProperty('uploadUrl');
-      expect(res.body).toHaveProperty('publicUrl');
-      expect(res.body.uploadUrl).toContain('X-Amz-Signature');
-      expect(res.body.publicUrl).toContain('storage.test.com');
-      expect(res.body.publicUrl).toContain(userId);
-      expect(res.body.publicUrl).toContain('avatar');
-      expect(res.body.publicUrl).toContain('profile.jpg');
+      expect(res.body).toHaveProperty('path');
+      expect(res.body.path).toContain('local/users');
+      expect(res.body.path).toContain(userId);
+      expect(res.body.path).toContain('avatar');
+      expect(res.body.path).toMatch(/\.jpeg$/);
 
-      expect(mockStorageProvider.uploadRequests.length).toBe(initialCount + 1);
-      const lastRequest = mockStorageProvider.uploadRequests[mockStorageProvider.uploadRequests.length - 1];
-      expect(lastRequest).toEqual({
-        entity: 'users',
-        entityId: userId,
-        field: 'avatar',
-        filename: 'profile.jpg',
-        contentType: 'image/jpeg',
-      });
+      expect(mockStorageProvider.uploadedFiles.length).toBe(initialCount + 1);
+      const uploaded = mockStorageProvider.uploadedFiles[mockStorageProvider.uploadedFiles.length - 1];
+      expect(uploaded.entity).toBe('users');
+      expect(uploaded.entityId).toBe(userId);
+      expect(uploaded.field).toBe('avatar');
+      expect(uploaded.contentType).toBe('image/jpeg');
+      expect(uploaded.size).toBeLessThanOrEqual(1_000_000);
     });
 
     it('should reject unauthenticated request', async () => {
+      const imageBuffer = createTestImageBuffer();
+
       await request(app.getHttpServer())
-        .post('/api/v1/storage/upload-url')
-        .send({
-          entity: 'users',
-          entityId: userId,
-          field: 'avatar',
-          filename: 'profile.jpg',
-          contentType: 'image/jpeg',
-        })
+        .post('/api/v1/storage/upload')
+        .field('entity', 'users')
+        .field('entityId', userId)
+        .field('field', 'avatar')
+        .attach('file', imageBuffer, 'test.jpg')
         .expect(401);
     });
 
     it('should reject upload for different user', async () => {
       const otherUserId = '550e8400-e29b-41d4-a716-446655440000';
+      const imageBuffer = createTestImageBuffer();
 
       const res = await request(app.getHttpServer())
-        .post('/api/v1/storage/upload-url')
+        .post('/api/v1/storage/upload')
         .set('Cookie', userCookies)
-        .send({
-          entity: 'users',
-          entityId: otherUserId,
-          field: 'avatar',
-          filename: 'profile.jpg',
-          contentType: 'image/jpeg',
-        })
+        .field('entity', 'users')
+        .field('entityId', otherUserId)
+        .field('field', 'avatar')
+        .attach('file', imageBuffer, 'test.jpg')
         .expect(403);
 
       expect(res.body.code).toBe('FORBIDDEN_ENTITY_ACCESS');
     });
 
-    it('should reject invalid content type', async () => {
-      await request(app.getHttpServer())
-        .post('/api/v1/storage/upload-url')
+    it('should reject non-image file (PDF)', async () => {
+      const pdfBuffer = Buffer.from('%PDF-1.4\n%test pdf');
+
+      const res = await request(app.getHttpServer())
+        .post('/api/v1/storage/upload')
         .set('Cookie', userCookies)
-        .send({
-          entity: 'users',
-          entityId: userId,
-          field: 'avatar',
-          filename: 'profile.pdf',
-          contentType: 'application/pdf',
-        })
+        .field('entity', 'users')
+        .field('entityId', userId)
+        .field('field', 'avatar')
+        .attach('file', pdfBuffer, { filename: 'document.pdf', contentType: 'application/pdf' })
         .expect(400);
+
+      expect(res.body.code).toBe('INVALID_FILE_MIME_TYPE');
+    });
+
+    it('should reject non-image file (text)', async () => {
+      const textBuffer = Buffer.from('Hello World');
+
+      const res = await request(app.getHttpServer())
+        .post('/api/v1/storage/upload')
+        .set('Cookie', userCookies)
+        .field('entity', 'users')
+        .field('entityId', userId)
+        .field('field', 'avatar')
+        .attach('file', textBuffer, { filename: 'file.txt', contentType: 'text/plain' })
+        .expect(400);
+
+      expect(res.body.code).toBe('INVALID_FILE_MIME_TYPE');
     });
 
     it('should reject invalid entity', async () => {
+      const imageBuffer = createTestImageBuffer();
+
       await request(app.getHttpServer())
-        .post('/api/v1/storage/upload-url')
+        .post('/api/v1/storage/upload')
         .set('Cookie', userCookies)
-        .send({
-          entity: 'invalid',
-          entityId: userId,
-          field: 'avatar',
-          filename: 'profile.jpg',
-          contentType: 'image/jpeg',
-        })
+        .field('entity', 'invalid')
+        .field('entityId', userId)
+        .field('field', 'avatar')
+        .attach('file', imageBuffer, 'test.jpg')
         .expect(400);
     });
 
     it('should reject invalid field', async () => {
-      await request(app.getHttpServer())
-        .post('/api/v1/storage/upload-url')
-        .set('Cookie', userCookies)
-        .send({
-          entity: 'users',
-          entityId: userId,
-          field: 'invalid',
-          filename: 'profile.jpg',
-          contentType: 'image/jpeg',
-        })
-        .expect(400);
-    });
+      const imageBuffer = createTestImageBuffer();
 
-    it('should reject filename with invalid characters', async () => {
       await request(app.getHttpServer())
-        .post('/api/v1/storage/upload-url')
+        .post('/api/v1/storage/upload')
         .set('Cookie', userCookies)
-        .send({
-          entity: 'users',
-          entityId: userId,
-          field: 'avatar',
-          filename: '../../../etc/passwd',
-          contentType: 'image/jpeg',
-        })
+        .field('entity', 'users')
+        .field('entityId', userId)
+        .field('field', 'invalid')
+        .attach('file', imageBuffer, 'test.jpg')
         .expect(400);
     });
   });
@@ -159,4 +150,11 @@ async function getUserId(app: INestApplication, cookies: string[]): Promise<stri
     .set('Cookie', cookies)
     .expect(200);
   return res.body.id;
+}
+
+function createTestImageBuffer(): Buffer {
+  return Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+    'base64'
+  );
 }

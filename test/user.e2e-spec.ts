@@ -64,6 +64,18 @@ describe('Users (e2e)', () => {
 
       expect(res.body.firstName).toBe('Updated');
     });
+
+    it('should accept avatar path (storage-relative)', async () => {
+      const avatarPath = `local/users/${await getUserId(app, userCookies)}/avatar/avatar-test.jpeg`;
+
+      const res = await request(app.getHttpServer())
+        .patch('/api/v1/users/me')
+        .set('Cookie', userCookies)
+        .send({ avatarUrl: avatarPath })
+        .expect(200);
+
+      expect(res.body.avatarUrl).toBe(avatarPath);
+    });
   });
 
   describe('GET /users', () => {

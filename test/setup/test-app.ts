@@ -8,8 +8,8 @@ import { EMAIL_PROVIDER, EmailProvider } from '@/common/email/email.interface';
 import {
   STORAGE_PROVIDER,
   StorageProvider,
-  GenerateUploadUrlParams,
-  UploadUrlResult,
+  UploadFileParams,
+  UploadFileResult,
 } from '@/common/storage/storage.interface';
 import { runMigrations } from './run-migrations';
 
@@ -26,16 +26,20 @@ export const mockEmailProvider: EmailProvider & {
 };
 
 export const mockStorageProvider: StorageProvider & {
-  uploadRequests: GenerateUploadUrlParams[];
+  uploadedFiles: Array<{ entity: string; entityId: string; field: string; filename: string; contentType: string; size: number }>;
 } = {
-  uploadRequests: [],
-  async generateUploadUrl(params: GenerateUploadUrlParams): Promise<UploadUrlResult> {
-    this.uploadRequests.push(params);
-    const key = `local/${params.entity}/${params.entityId}/${params.field}/${params.filename}`;
-    return {
-      uploadUrl: `https://test.r2.cloudflarestorage.com/veracity-test/${key}?X-Amz-Signature=mock`,
-      publicUrl: `https://storage.test.com/${key}`,
-    };
+  uploadedFiles: [],
+  async uploadFile(params: UploadFileParams): Promise<UploadFileResult> {
+    this.uploadedFiles.push({
+      entity: params.entity,
+      entityId: params.entityId,
+      field: params.field,
+      filename: params.filename,
+      contentType: params.contentType,
+      size: params.buffer.length,
+    });
+    const path = `local/${params.entity}/${params.entityId}/${params.field}/${params.filename}`;
+    return { path };
   },
 };
 
@@ -79,7 +83,7 @@ export async function setupTestApp(): Promise<INestApplication> {
   await runMigrations(databaseUrl);
 
   mockEmailProvider.sentEmails = [];
-  mockStorageProvider.uploadRequests = [];
+  mockStorageProvider.uploadedFiles = [];
 
   const moduleFixture: TestingModule = await Test.createTestingModule({
     imports: [AppModule],

@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Patch, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { UserJwtAuthGuard } from '@/user-auth/guard/user-jwt-auth.guard';
 import { ActiveUserGuard } from '@/user-auth/guard/user-status.guard';
@@ -51,5 +60,15 @@ export class UsersController {
       users: result.users.map(mapOtherUserToDto),
       nextCursor: result.nextCursor,
     };
+  }
+
+  @Get(':id')
+  @UseGuards(UserJwtAuthGuard, ActiveUserGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get user by ID' })
+  @ApiOkResponse({ type: OtherUserResponseDto })
+  async findOne(@Param('id', ParseUUIDPipe) id: string): Promise<OtherUserResponseDto> {
+    const user = await this.userService.findOtherUserById(id);
+    return mapOtherUserToDto(user);
   }
 }

@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsArray, IsObject, IsOptional, IsString, IsUrl, IsUUID, MaxLength } from 'class-validator';
+import { IsArray, IsObject, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
 
 export class UpdateMeDto {
   @ApiPropertyOptional({ example: 'John' })
@@ -14,9 +14,10 @@ export class UpdateMeDto {
   @MaxLength(100)
   lastName?: string;
 
-  @ApiPropertyOptional({ example: 'https://example.com/avatar.jpg' })
+  @ApiPropertyOptional({ example: 'development/users/<user-id>/avatar/avatar-123.jpeg' })
   @IsOptional()
-  @IsUrl()
+  @IsString()
+  @MaxLength(500)
   avatarUrl?: string;
 
   @ApiPropertyOptional({ example: 'Software Engineer' })

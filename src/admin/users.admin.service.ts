@@ -37,6 +37,24 @@ export class UsersAdminService {
     return this.cls.get<Pool>(CLS_ADMIN_POOL);
   }
 
+  async findUserById(userId: string): Promise<UserWithInterests> {
+    try {
+      const result = await this.pool.query<DbUserRow>(
+        `SELECT * FROM admin.users_with_interests_v WHERE id = $1`,
+        [userId],
+      );
+
+      if (result.rows.length === 0) {
+        throw new UserNotFoundError(userId);
+      }
+
+      return this.mapDbRow(result.rows[0]);
+    } catch (error) {
+      if (error instanceof UserNotFoundError) throw error;
+      throw this.mapPgError(error);
+    }
+  }
+
   async findUsers(query: UsersQueryDto): Promise<{ users: UserWithInterests[]; total: number }> {
     try {
       const params: (string | number)[] = [];

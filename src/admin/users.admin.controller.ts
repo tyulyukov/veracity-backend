@@ -45,6 +45,14 @@ export class UsersAdminController {
     };
   }
 
+  @Get(':id')
+  @ApiOperation({ summary: 'Get user by ID' })
+  @ApiOkResponse({ type: UserResponseDto })
+  async findOne(@Param('id', ParseUUIDPipe) id: string): Promise<UserResponseDto> {
+    const user = await this.usersAdminService.findUserById(id);
+    return mapUserToDto(user);
+  }
+
   @Patch(':id/status')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Update user status (approve/reject)' })
