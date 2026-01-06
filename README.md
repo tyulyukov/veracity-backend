@@ -5,26 +5,17 @@ Business Networking Platform API built with NestJS.
 ## Stack
 
 - **NestJS 11** - Node.js framework
-- **TypeORM** - ORM with PostgreSQL
+- **pg** & **node-pg-migrate** - PostgreSQL interaction
 - **Pino** - Logging
 - **Scalar** - API documentation (OpenAPI/Swagger)
 
 ## Quick Start
 
-### With Docker (recommended)
+### With Docker
 
 ```bash
 cp .env.example .env  # configure environment
-docker compose up
+docker compose up -d  # migrations run automatically
 ```
 
 API available at `http://localhost:7007` | Docs at `http://localhost:7007/api/docs`
-
-### Migrations
-
-```bash
-npm run migration:generate  # generate new migration
-npm run migration:run       # apply migrations
-npm run migration:revert    # revert last migration
-```
-

@@ -6,7 +6,12 @@ import { UserNotFoundError } from './domain/user-not-found.error';
 import { UserNotActiveError } from './domain/user-not-active.error';
 import { UsersQueryDto } from './dto/users-query.dto';
 import { UpdateMeDto } from './dto/update-me.dto';
-import { UserWithInterests, OtherUserWithInterests, Interest } from './domain/user.type';
+import {
+  UserWithInterests,
+  OtherUserWithInterests,
+  OtherUserDetailWithInterests,
+  Interest,
+} from './domain/user.type';
 
 interface DbUserRow {
   id: string;
@@ -22,6 +27,7 @@ interface DbUserRow {
   created_at: Date;
   last_activity_at: Date | null;
   interests: Interest[] | string;
+  total_connections: number;
 }
 
 interface DbOtherUserRow {
@@ -36,6 +42,14 @@ interface DbOtherUserRow {
   created_at: Date;
   last_activity_at: Date | null;
   interests: Interest[] | string;
+  is_connected: boolean;
+  has_outgoing_request: boolean;
+  has_incoming_request: boolean;
+}
+
+interface DbOtherUserDetailRow extends DbOtherUserRow {
+  contact_info: Record<string, string> | null;
+  total_connections: number;
 }
 
 const DEFAULT_PAGE_SIZE = 20;
@@ -56,7 +70,20 @@ export class UserService {
                 COALESCE(
                   json_agg(json_build_object('id', i.id, 'name', i.name))
                   FILTER (WHERE i.id IS NOT NULL), '[]'::json
-                ) AS interests
+                ) AS interests,
+                (
+                  SELECT COUNT(*)::int
+                  FROM connections c
+                  JOIN users other_user ON (
+                    CASE 
+                      WHEN c.requester_user_id = u.id THEN c.target_user_id = other_user.id
+                      ELSE c.requester_user_id = other_user.id
+                    END
+                  )
+                  WHERE c.status = 'approved'
+                    AND (c.requester_user_id = u.id OR c.target_user_id = u.id)
+                    AND other_user.status = 'active'
+                ) AS total_connections
          FROM users u
          LEFT JOIN user_interests ui ON ui.user_id = u.id
          LEFT JOIN interests i ON i.id = ui.interest_id
@@ -97,10 +124,10 @@ export class UserService {
     }
   }
 
-  async findOtherUserById(userId: string): Promise<OtherUserWithInterests> {
+  async findOtherUserById(userId: string): Promise<OtherUserDetailWithInterests> {
     try {
-      const result = await this.pool.query<DbOtherUserRow>(
-        `SELECT * FROM "user".other_active_users_v WHERE id = $1`,
+      const result = await this.pool.query<DbOtherUserDetailRow>(
+        `SELECT * FROM "user".user_detail_with_connection_v WHERE id = $1`,
         [userId],
       );
 
@@ -108,7 +135,7 @@ export class UserService {
         throw new UserNotFoundError(userId);
       }
 
-      return this.mapOtherUserRow(result.rows[0]);
+      return this.mapOtherUserDetailRow(result.rows[0]);
     } catch (error) {
       if (error instanceof UserNotFoundError) throw error;
       throw this.mapPgError(error);
@@ -140,6 +167,22 @@ export class UserService {
         paramIndex++;
       }
 
+      if (query.position) {
+        conditions.push(`LOWER(position) LIKE '%' || LOWER($${paramIndex}) || '%'`);
+        params.push(query.position);
+        paramIndex++;
+      }
+
+      if (query.connectionFilter && query.connectionFilter !== 'all') {
+        if (query.connectionFilter === 'sent_requests') {
+          conditions.push('has_outgoing_request = true');
+        } else if (query.connectionFilter === 'received_requests') {
+          conditions.push('has_incoming_request = true');
+        } else if (query.connectionFilter === 'connected') {
+          conditions.push('is_connected = true');
+        }
+      }
+
       if (query.cursor) {
         const [createdAt, id] = query.cursor.split(',');
         conditions.push(
@@ -153,7 +196,7 @@ export class UserService {
       const pageSize = query.limit ?? DEFAULT_PAGE_SIZE;
 
       const sql = `
-        SELECT * FROM "user".other_active_users_v
+        SELECT * FROM "user".users_with_connections_v
         ${whereClause}
         ORDER BY created_at DESC, id DESC
         LIMIT ${pageSize + 1}
@@ -197,6 +240,7 @@ export class UserService {
           : new Date(row.last_activity_at)
         : null,
       interests,
+      total_connections: row.total_connections,
     };
   }
 
@@ -218,6 +262,17 @@ export class UserService {
           : new Date(row.last_activity_at)
         : null,
       interests,
+      is_connected: row.is_connected,
+      has_outgoing_request: row.has_outgoing_request,
+      has_incoming_request: row.has_incoming_request,
+    };
+  }
+
+  private mapOtherUserDetailRow(row: DbOtherUserDetailRow): OtherUserDetailWithInterests {
+    return {
+      ...this.mapOtherUserRow(row),
+      contact_info: row.contact_info,
+      total_connections: row.total_connections,
     };
   }
 

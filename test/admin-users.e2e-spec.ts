@@ -48,6 +48,22 @@ describe('Admin Users (e2e)', () => {
       expect(Array.isArray(res.body.users)).toBe(true);
     });
 
+    it('should include connection stats', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/api/v1/admin/users')
+        .set('Cookie', adminCookies)
+        .expect(200);
+
+      expect(res.body.users.length).toBeGreaterThan(0);
+      const user = res.body.users[0];
+      expect(user).toHaveProperty('totalConnections');
+      expect(user).toHaveProperty('pendingSentCount');
+      expect(user).toHaveProperty('pendingReceivedCount');
+      expect(typeof user.totalConnections).toBe('number');
+      expect(typeof user.pendingSentCount).toBe('number');
+      expect(typeof user.pendingReceivedCount).toBe('number');
+    });
+
     it('should filter by status', async () => {
       const res = await request(app.getHttpServer())
         .get('/api/v1/admin/users?status=pending')
@@ -149,6 +165,23 @@ describe('Admin Users (e2e)', () => {
         .set('Cookie', adminCookies)
         .send({ role: 'invalid' })
         .expect(400);
+    });
+  });
+
+  describe('GET /admin/users/:id', () => {
+    it('should return user by id with connection stats', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/api/v1/admin/users/${testUserId}`)
+        .set('Cookie', adminCookies)
+        .expect(200);
+
+      expect(res.body.id).toBe(testUserId);
+      expect(res.body).toHaveProperty('totalConnections');
+      expect(res.body).toHaveProperty('pendingSentCount');
+      expect(res.body).toHaveProperty('pendingReceivedCount');
+      expect(typeof res.body.totalConnections).toBe('number');
+      expect(typeof res.body.pendingSentCount).toBe('number');
+      expect(typeof res.body.pendingReceivedCount).toBe('number');
     });
   });
 });

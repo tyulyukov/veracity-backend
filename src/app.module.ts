@@ -13,6 +13,7 @@ import { AdminAuthModule } from './admin-auth/admin-auth.module';
 import { UserModule } from './user/user.module';
 import { AdminModule } from './admin/admin.module';
 import { StorageFeatureModule } from './storage/storage.module';
+import { ConnectionModule } from './connection/connection.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { StorageFeatureModule } from './storage/storage.module';
     UserModule,
     AdminModule,
     StorageFeatureModule,
+    ConnectionModule,
   ],
   providers: [
     {

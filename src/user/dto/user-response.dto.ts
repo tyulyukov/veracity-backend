@@ -39,4 +39,13 @@ export class UserResponseDto {
 
   @ApiProperty({ type: [String] })
   interests: { id: string; name: string }[];
+
+  @ApiProperty({ description: 'Total number of approved connections' })
+  totalConnections: number;
+
+  @ApiPropertyOptional()
+  pendingSentCount?: number;
+
+  @ApiPropertyOptional()
+  pendingReceivedCount?: number;
 }

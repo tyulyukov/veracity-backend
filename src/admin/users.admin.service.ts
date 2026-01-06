@@ -3,7 +3,7 @@ import { ClsService } from 'nestjs-cls';
 import { Pool, DatabaseError } from 'pg';
 import { CLS_ADMIN_POOL } from '@/admin-auth/admin-jwt.strategy';
 import { UserNotFoundError } from '@/user/domain/user-not-found.error';
-import { UserWithInterests, Interest } from '@/user/domain/user.type';
+import { UserWithInterestsAndStats, Interest } from '@/user/domain/user.type';
 import { ForbiddenOperationError } from './domain/forbidden-operation.error';
 import { UsersQueryDto } from './dto/users-query.dto';
 import { UpdateUserStatusDto } from './dto/update-user-status.dto';
@@ -23,6 +23,9 @@ interface DbUserRow {
   created_at: Date;
   last_activity_at: Date | null;
   interests: Interest[] | string;
+  total_connections: number;
+  pending_sent_count: number;
+  pending_received_count: number;
 }
 
 interface CountRow {
@@ -37,7 +40,7 @@ export class UsersAdminService {
     return this.cls.get<Pool>(CLS_ADMIN_POOL);
   }
 
-  async findUserById(userId: string): Promise<UserWithInterests> {
+  async findUserById(userId: string): Promise<UserWithInterestsAndStats> {
     try {
       const result = await this.pool.query<DbUserRow>(
         `SELECT * FROM admin.users_with_interests_v WHERE id = $1`,
@@ -55,7 +58,9 @@ export class UsersAdminService {
     }
   }
 
-  async findUsers(query: UsersQueryDto): Promise<{ users: UserWithInterests[]; total: number }> {
+  async findUsers(
+    query: UsersQueryDto,
+  ): Promise<{ users: UserWithInterestsAndStats[]; total: number }> {
     try {
       const params: (string | number)[] = [];
       const conditions: string[] = [];
@@ -131,7 +136,7 @@ export class UsersAdminService {
     }
   }
 
-  private mapDbRow(row: DbUserRow): UserWithInterests {
+  private mapDbRow(row: DbUserRow): UserWithInterestsAndStats {
     const interests = typeof row.interests === 'string' ? JSON.parse(row.interests) : row.interests;
     return {
       id: row.id,
@@ -151,6 +156,9 @@ export class UsersAdminService {
           : new Date(row.last_activity_at)
         : null,
       interests,
+      total_connections: row.total_connections,
+      pending_sent_count: row.pending_sent_count,
+      pending_received_count: row.pending_received_count,
     };
   }
 

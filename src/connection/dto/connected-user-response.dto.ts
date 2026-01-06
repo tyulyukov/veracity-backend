@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-export class OtherUserResponseDto {
+export class ConnectedUserResponseDto {
   @ApiProperty()
   id: string;
 
@@ -42,12 +42,16 @@ export class OtherUserResponseDto {
 
   @ApiProperty()
   hasIncomingRequest: boolean;
+
+  @ApiProperty()
+  connectionCreatedAt: Date;
 }
 
-export class OtherUserDetailResponseDto extends OtherUserResponseDto {
-  @ApiPropertyOptional({ description: 'Contact info (only visible if connected)' })
-  contactInfo: Record<string, string> | null;
+export class PaginatedConnectionsResponseDto {
+  @ApiProperty({ type: [ConnectedUserResponseDto] })
+  users: ConnectedUserResponseDto[];
 
-  @ApiProperty({ description: 'Total number of approved connections' })
-  totalConnections: number;
+  @ApiPropertyOptional()
+  nextCursor: string | null;
 }
+

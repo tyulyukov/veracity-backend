@@ -14,10 +14,10 @@ import { ActiveUserGuard } from '@/user-auth/guard/user-status.guard';
 import { CurrentUser, CurrentUserPayload } from '@/common/decorator/current-user.decorator';
 import { UserService } from './user.service';
 import { UserResponseDto } from './dto/user-response.dto';
-import { OtherUserResponseDto } from './dto/other-user-response.dto';
+import { OtherUserResponseDto, OtherUserDetailResponseDto } from './dto/other-user-response.dto';
 import { UsersQueryDto } from './dto/users-query.dto';
 import { UpdateMeDto } from './dto/update-me.dto';
-import { mapUserToDto, mapOtherUserToDto } from './user.mapper';
+import { mapUserToDto, mapOtherUserToDto, mapOtherUserDetailToDto } from './user.mapper';
 
 @ApiTags('Users')
 @Controller('users')
@@ -65,10 +65,10 @@ export class UsersController {
   @Get(':id')
   @UseGuards(UserJwtAuthGuard, ActiveUserGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get user by ID' })
-  @ApiOkResponse({ type: OtherUserResponseDto })
-  async findOne(@Param('id', ParseUUIDPipe) id: string): Promise<OtherUserResponseDto> {
+  @ApiOperation({ summary: 'Get user by ID (contact info visible only if connected)' })
+  @ApiOkResponse({ type: OtherUserDetailResponseDto })
+  async findOne(@Param('id', ParseUUIDPipe) id: string): Promise<OtherUserDetailResponseDto> {
     const user = await this.userService.findOtherUserById(id);
-    return mapOtherUserToDto(user);
+    return mapOtherUserDetailToDto(user);
   }
 }

@@ -20,6 +20,13 @@ export interface UserRow {
 
 export interface UserWithInterests extends UserRow {
   interests: Interest[];
+  total_connections: number;
+}
+
+export interface UserWithInterestsAndStats extends UserWithInterests {
+  total_connections: number;
+  pending_sent_count: number;
+  pending_received_count: number;
 }
 
 export interface OtherUserRow {
@@ -37,4 +44,12 @@ export interface OtherUserRow {
 
 export interface OtherUserWithInterests extends OtherUserRow {
   interests: Interest[];
+  is_connected: boolean;
+  has_outgoing_request: boolean;
+  has_incoming_request: boolean;
+}
+
+export interface OtherUserDetailWithInterests extends OtherUserWithInterests {
+  contact_info: Record<string, string> | null;
+  total_connections: number;
 }
