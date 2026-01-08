@@ -24,6 +24,8 @@ import { UsersAdminService } from './users.admin.service';
 import { UsersQueryDto } from './dto/users-query.dto';
 import { UpdateUserStatusDto } from './dto/update-user-status.dto';
 import { UpdateUserRoleDto } from './dto/update-user-role.dto';
+import { UserEventRelationDto } from './dto/user-event-relation.dto';
+import { OffsetPaginationDto } from '@/common/dto/offset-pagination.dto';
 
 @ApiTags('Admin - Users')
 @Controller('admin/users')
@@ -73,5 +75,40 @@ export class UsersAdminController {
     @Body() dto: UpdateUserRoleDto,
   ): Promise<void> {
     await this.usersAdminService.updateUserRole(id, dto);
+  }
+
+  @Get(':id/events')
+  @ApiOperation({ summary: "Get user's event relations (created events and registrations)" })
+  @ApiOkResponse({ description: 'Paginated list of user event relations' })
+  async getUserEventRelations(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query() query: OffsetPaginationDto,
+  ): Promise<{ events: UserEventRelationDto[]; total: number }> {
+    const result = await this.usersAdminService.getUserEventRelations(
+      id,
+      query.offset,
+      query.limit,
+    );
+    return {
+      events: result.events.map((relation) => ({
+        userId: relation.user_id,
+        eventRelationType: relation.event_relation_type,
+        eventId: relation.event_id,
+        name: relation.name,
+        isOnline: relation.is_online,
+        eventDate: relation.event_date,
+        location: relation.location,
+        link: relation.link,
+        description: relation.description,
+        imageUrls: relation.image_urls,
+        tags: relation.tags,
+        limitParticipants: relation.limit_participants,
+        participantCount: relation.participant_count,
+        createdAt: relation.created_at,
+        registrationComment: relation.registration_comment,
+        registrationCreatedAt: relation.registration_created_at,
+      })),
+      total: result.total,
+    };
   }
 }

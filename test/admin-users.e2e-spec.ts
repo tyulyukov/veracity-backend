@@ -184,4 +184,204 @@ describe('Admin Users (e2e)', () => {
       expect(typeof res.body.pendingReceivedCount).toBe('number');
     });
   });
+
+  describe('GET /admin/users/:id/events', () => {
+    let speakerId: string;
+    let speakerCookies: string[];
+    let regularUserId: string;
+    let regularUserCookies: string[];
+    let eventId: string;
+
+    beforeAll(async () => {
+      await registerUser(app, {
+        email: 'admin-event-speaker@test.com',
+        password: 'password123',
+        firstName: 'EventSpeaker',
+        lastName: 'Admin',
+        interestIds: interestIds.slice(0, 1),
+      });
+
+      await registerUser(app, {
+        email: 'admin-event-user@test.com',
+        password: 'password123',
+        firstName: 'EventUser',
+        lastName: 'Admin',
+        interestIds: interestIds.slice(0, 1),
+      });
+
+      const speakerLoginRes = await request(app.getHttpServer())
+        .post('/api/v1/users/auth/login')
+        .send({ email: 'admin-event-speaker@test.com', password: 'password123' })
+        .expect(200);
+      speakerCookies = speakerLoginRes.headers['set-cookie'] as unknown as string[];
+
+      const regularUserLoginRes = await request(app.getHttpServer())
+        .post('/api/v1/users/auth/login')
+        .send({ email: 'admin-event-user@test.com', password: 'password123' })
+        .expect(200);
+      regularUserCookies = regularUserLoginRes.headers['set-cookie'] as unknown as string[];
+
+      const speakerMeRes = await request(app.getHttpServer())
+        .get('/api/v1/users/me')
+        .set('Cookie', speakerCookies)
+        .expect(200);
+      speakerId = speakerMeRes.body.id;
+
+      const regularUserMeRes = await request(app.getHttpServer())
+        .get('/api/v1/users/me')
+        .set('Cookie', regularUserCookies)
+        .expect(200);
+      regularUserId = regularUserMeRes.body.id;
+
+      await request(app.getHttpServer())
+        .patch(`/api/v1/admin/users/${speakerId}/status`)
+        .set('Cookie', adminCookies)
+        .send({ status: 'active' })
+        .expect(204);
+
+      await request(app.getHttpServer())
+        .patch(`/api/v1/admin/users/${regularUserId}/status`)
+        .set('Cookie', adminCookies)
+        .send({ status: 'active' })
+        .expect(204);
+
+      await request(app.getHttpServer())
+        .patch(`/api/v1/admin/users/${speakerId}/role`)
+        .set('Cookie', adminCookies)
+        .send({ role: 'speaker' })
+        .expect(204);
+
+      const speakerLoginRes2 = await request(app.getHttpServer())
+        .post('/api/v1/users/auth/login')
+        .send({ email: 'admin-event-speaker@test.com', password: 'password123' })
+        .expect(200);
+      speakerCookies = speakerLoginRes2.headers['set-cookie'] as unknown as string[];
+
+      const regularUserLoginRes2 = await request(app.getHttpServer())
+        .post('/api/v1/users/auth/login')
+        .send({ email: 'admin-event-user@test.com', password: 'password123' })
+        .expect(200);
+      regularUserCookies = regularUserLoginRes2.headers['set-cookie'] as unknown as string[];
+
+      const createEventRes = await request(app.getHttpServer())
+        .post('/api/v1/events')
+        .set('Cookie', speakerCookies)
+        .send({
+          name: 'Admin Test Event',
+          isOnline: true,
+          eventDate: '2026-06-15T18:00:00Z',
+          link: 'https://example.com',
+          description: 'Test event for admin',
+        })
+        .expect(201);
+      eventId = createEventRes.body.id;
+
+      await request(app.getHttpServer())
+        .post(`/api/v1/events/${eventId}/register`)
+        .set('Cookie', regularUserCookies)
+        .send({ comment: 'Excited to attend!' })
+        .expect(201);
+    });
+
+    it('should return empty array for user with no event relations', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/api/v1/admin/users/${testUserId}/events`)
+        .set('Cookie', adminCookies)
+        .expect(200);
+
+      expect(res.body).toHaveProperty('events');
+      expect(res.body).toHaveProperty('total');
+      expect(Array.isArray(res.body.events)).toBe(true);
+      expect(res.body.events.length).toBe(0);
+      expect(res.body.total).toBe(0);
+    });
+
+    it('should return created events for speaker', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/api/v1/admin/users/${speakerId}/events`)
+        .set('Cookie', adminCookies)
+        .expect(200);
+
+      expect(res.body).toHaveProperty('events');
+      expect(res.body).toHaveProperty('total');
+      expect(Array.isArray(res.body.events)).toBe(true);
+      expect(res.body.events.length).toBeGreaterThan(0);
+      expect(res.body.total).toBeGreaterThan(0);
+
+      const createdEvent = res.body.events.find(
+        (e: { eventRelationType: string }) => e.eventRelationType === 'created',
+      );
+      expect(createdEvent).toBeDefined();
+      expect(createdEvent.eventId).toBe(eventId);
+      expect(createdEvent.name).toBe('Admin Test Event');
+      expect(createdEvent.userId).toBe(speakerId);
+      expect(createdEvent.registrationComment).toBeNull();
+      expect(createdEvent.registrationCreatedAt).toBeNull();
+    });
+
+    it('should return registered events for regular user', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/api/v1/admin/users/${regularUserId}/events`)
+        .set('Cookie', adminCookies)
+        .expect(200);
+
+      expect(res.body).toHaveProperty('events');
+      expect(res.body).toHaveProperty('total');
+      expect(Array.isArray(res.body.events)).toBe(true);
+      expect(res.body.events.length).toBeGreaterThan(0);
+      expect(res.body.total).toBeGreaterThan(0);
+
+      const registeredEvent = res.body.events.find(
+        (e: { eventRelationType: string }) => e.eventRelationType === 'registered',
+      );
+      expect(registeredEvent).toBeDefined();
+      expect(registeredEvent.eventId).toBe(eventId);
+      expect(registeredEvent.name).toBe('Admin Test Event');
+      expect(registeredEvent.userId).toBe(regularUserId);
+      expect(registeredEvent.registrationComment).toBe('Excited to attend!');
+      expect(registeredEvent.registrationCreatedAt).toBeDefined();
+    });
+
+    it('should support pagination with limit parameter', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/api/v1/admin/users/${speakerId}/events?limit=1`)
+        .set('Cookie', adminCookies)
+        .expect(200);
+
+      expect(res.body).toHaveProperty('events');
+      expect(res.body).toHaveProperty('total');
+      expect(res.body.events.length).toBeLessThanOrEqual(1);
+      expect(res.body.total).toBeGreaterThan(0);
+    });
+
+    it('should support pagination with offset parameter', async () => {
+      const fullRes = await request(app.getHttpServer())
+        .get(`/api/v1/admin/users/${speakerId}/events`)
+        .set('Cookie', adminCookies)
+        .expect(200);
+
+      if (fullRes.body.total > 0) {
+        const offsetRes = await request(app.getHttpServer())
+          .get(`/api/v1/admin/users/${speakerId}/events?offset=0&limit=1`)
+          .set('Cookie', adminCookies)
+          .expect(200);
+
+        expect(offsetRes.body.events.length).toBeLessThanOrEqual(1);
+        expect(offsetRes.body.total).toBe(fullRes.body.total);
+      }
+    });
+
+    it('should return 404 for non-existent user', async () => {
+      await request(app.getHttpServer())
+        .get('/api/v1/admin/users/00000000-0000-0000-0000-000000000000/events')
+        .set('Cookie', adminCookies)
+        .expect(404);
+    });
+
+    it('should reject unauthenticated request', async () => {
+      await request(app.getHttpServer())
+        .get(`/api/v1/admin/users/${testUserId}/events`)
+        .expect(401);
+    });
+  });
 });

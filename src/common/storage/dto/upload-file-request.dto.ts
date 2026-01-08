@@ -3,18 +3,17 @@ import { IsIn, IsString, IsUUID } from 'class-validator';
 import { StorageEntity, StorageField } from '@/common/storage/storage-path.builder';
 
 export class UploadFileRequestDto {
-  @ApiProperty({ example: 'users', enum: ['users'] })
+  @ApiProperty({ example: 'users', enum: ['users', 'events'] })
   @IsString()
-  @IsIn(['users'])
+  @IsIn(['users', 'events'])
   entity: StorageEntity;
 
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
   @IsUUID('4')
   entityId: string;
 
-  @ApiProperty({ example: 'avatar', enum: ['avatar'] })
+  @ApiProperty({ example: 'avatar', enum: ['avatar', 'event_image'] })
   @IsString()
-  @IsIn(['avatar'])
+  @IsIn(['avatar', 'event_image'])
   field: StorageField;
 }
-

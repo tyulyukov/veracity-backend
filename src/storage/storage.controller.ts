@@ -22,6 +22,7 @@ import { UploadFileRequestDto } from '@/common/storage/dto/upload-file-request.d
 import { UploadFileResponseDto } from '@/common/storage/dto/upload-file-response.dto';
 import { ForbiddenEntityAccessError } from './domain/forbidden-entity-access.error';
 import { InvalidFileMimeTypeError } from './domain/invalid-file-mime-type.error';
+import { EventService } from '@/event/event.service';
 
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 
@@ -31,6 +32,7 @@ export class StorageController {
   constructor(
     private readonly storageService: StorageService,
     private readonly imageProcessor: ImageProcessorService,
+    private readonly eventService: EventService,
     private readonly logger: PinoLogger,
   ) {
     this.logger.setContext(StorageController.name);
@@ -64,6 +66,14 @@ export class StorageController {
 
     if (dto.entity === 'users' && dto.entityId !== currentUser.userId) {
       throw new ForbiddenEntityAccessError();
+    }
+
+    if (dto.entity === 'events') {
+      try {
+        await this.eventService.getMyEventById(dto.entityId);
+      } catch (error) {
+        throw new ForbiddenEntityAccessError();
+      }
     }
 
     const config = getImageProcessingConfig(dto.field);

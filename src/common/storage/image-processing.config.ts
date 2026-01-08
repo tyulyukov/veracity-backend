@@ -18,6 +18,13 @@ export const IMAGE_PROCESSING_CONFIGS: Record<StorageField, ImageProcessingConfi
     format: 'jpeg',
     allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
   },
+  event_image: {
+    maxWidth: 1920,
+    maxHeight: 1080,
+    quality: 90,
+    format: 'jpeg',
+    allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
+  },
 };
 
 export function getImageProcessingConfig(field: StorageField): ImageProcessingConfig {
@@ -32,4 +39,3 @@ export function getOutputMimeType(format: ImageFormat): string {
   };
   return mimeTypes[format];
 }
-

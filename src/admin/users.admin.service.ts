@@ -8,6 +8,7 @@ import { ForbiddenOperationError } from './domain/forbidden-operation.error';
 import { UsersQueryDto } from './dto/users-query.dto';
 import { UpdateUserStatusDto } from './dto/update-user-status.dto';
 import { UpdateUserRoleDto } from './dto/update-user-role.dto';
+import { UserEventRelation } from '@/event/domain/event.type';
 
 interface DbUserRow {
   id: string;
@@ -30,6 +31,25 @@ interface DbUserRow {
 
 interface CountRow {
   count: string;
+}
+
+interface DbUserEventRelationRow {
+  user_id: string;
+  event_relation_type: 'created' | 'registered';
+  event_id: string;
+  name: string;
+  is_online: boolean;
+  event_date: Date;
+  location: string | null;
+  link: string | null;
+  description: string | null;
+  image_urls: string[];
+  tags: string[];
+  limit_participants: number | null;
+  participant_count: number;
+  created_at: Date;
+  registration_comment: string | null;
+  registration_created_at: Date | null;
 }
 
 @Injectable()
@@ -136,6 +156,40 @@ export class UsersAdminService {
     }
   }
 
+  async getUserEventRelations(
+    userId: string,
+    offset?: number,
+    limit?: number,
+  ): Promise<{ events: UserEventRelation[]; total: number }> {
+    try {
+      const userExists = await this.pool.query('SELECT id FROM users WHERE id = $1', [userId]);
+      if (userExists.rows.length === 0) {
+        throw new UserNotFoundError(userId);
+      }
+
+      const countSql = `SELECT COUNT(*) FROM admin.user_events_and_registrations_v WHERE user_id = $1`;
+      const countResult = await this.pool.query<CountRow>(countSql, [userId]);
+      const total = parseInt(countResult.rows[0].count, 10);
+
+      const pageLimit = limit ?? 20;
+      const pageOffset = offset ?? 0;
+
+      const result = await this.pool.query<DbUserEventRelationRow>(
+        `SELECT * FROM admin.user_events_and_registrations_v
+         WHERE user_id = $1
+         ORDER BY event_date DESC, created_at DESC
+         LIMIT $2 OFFSET $3`,
+        [userId, pageLimit, pageOffset],
+      );
+
+      const events = result.rows.map((row) => this.mapEventRelationRow(row));
+      return { events, total };
+    } catch (error) {
+      if (error instanceof UserNotFoundError) throw error;
+      throw this.mapPgError(error);
+    }
+  }
+
   private mapDbRow(row: DbUserRow): UserWithInterestsAndStats {
     const interests = typeof row.interests === 'string' ? JSON.parse(row.interests) : row.interests;
     return {
@@ -159,6 +213,31 @@ export class UsersAdminService {
       total_connections: row.total_connections,
       pending_sent_count: row.pending_sent_count,
       pending_received_count: row.pending_received_count,
+    };
+  }
+
+  private mapEventRelationRow(row: DbUserEventRelationRow): UserEventRelation {
+    return {
+      user_id: row.user_id,
+      event_relation_type: row.event_relation_type,
+      event_id: row.event_id,
+      name: row.name,
+      is_online: row.is_online,
+      event_date: row.event_date instanceof Date ? row.event_date : new Date(row.event_date),
+      location: row.location,
+      link: row.link,
+      description: row.description,
+      image_urls: row.image_urls,
+      tags: row.tags,
+      limit_participants: row.limit_participants,
+      participant_count: row.participant_count,
+      created_at: row.created_at instanceof Date ? row.created_at : new Date(row.created_at),
+      registration_comment: row.registration_comment,
+      registration_created_at: row.registration_created_at
+        ? row.registration_created_at instanceof Date
+          ? row.registration_created_at
+          : new Date(row.registration_created_at)
+        : null,
     };
   }
 

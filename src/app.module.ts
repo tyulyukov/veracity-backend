@@ -14,6 +14,7 @@ import { UserModule } from './user/user.module';
 import { AdminModule } from './admin/admin.module';
 import { StorageFeatureModule } from './storage/storage.module';
 import { ConnectionModule } from './connection/connection.module';
+import { EventModule } from './event/event.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { ConnectionModule } from './connection/connection.module';
     AdminModule,
     StorageFeatureModule,
     ConnectionModule,
+    EventModule,
   ],
   providers: [
     {

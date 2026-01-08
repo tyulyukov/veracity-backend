@@ -1,7 +1,7 @@
 import { Environment } from '@/common/config/env.validation';
 
-export type StorageEntity = 'users';
-export type StorageField = 'avatar';
+export type StorageEntity = 'users' | 'events';
+export type StorageField = 'avatar' | 'event_image';
 
 export interface StoragePathParams {
   env: Environment;
