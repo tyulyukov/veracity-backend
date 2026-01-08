@@ -178,11 +178,15 @@ export class EventController {
   @Get(':eventId/participants')
   @UseGuards(SpeakerGuard)
   @ApiOperation({ summary: "Get participants of speaker's event" })
-  @ApiOkResponse({ type: [EventParticipantDto] })
+  @ApiOkResponse({ description: 'Paginated list of event participants' })
   async getEventParticipants(
     @Param('eventId', ParseUUIDPipe) eventId: string,
-  ): Promise<EventParticipantDto[]> {
-    const participants = await this.eventService.getEventParticipants(eventId);
-    return participants.map(mapEventParticipantToDto);
+    @Query() query: CursorPaginationDto,
+  ): Promise<{ participants: EventParticipantDto[]; nextCursor: string | null }> {
+    const result = await this.eventService.getEventParticipants(eventId, query.cursor, query.limit);
+    return {
+      participants: result.participants.map(mapEventParticipantToDto),
+      nextCursor: result.nextCursor,
+    };
   }
 }

@@ -185,9 +185,7 @@ describe('Connections (e2e)', () => {
       expect(res.body.users).toBeDefined();
       expect(Array.isArray(res.body.users)).toBe(true);
 
-      const user2InList = res.body.users.find(
-        (u: { id: string }) => u.id === user2Id,
-      );
+      const user2InList = res.body.users.find((u: { id: string }) => u.id === user2Id);
       if (user2InList) {
         expect(user2InList).toHaveProperty('isConnected');
         expect(user2InList).toHaveProperty('hasOutgoingRequest');
@@ -319,9 +317,7 @@ describe('Connections (e2e)', () => {
       expect(res.body.users).toBeDefined();
       expect(Array.isArray(res.body.users)).toBe(true);
 
-      const connectedUser = res.body.users.find(
-        (u: { id: string }) => u.id === user1Id,
-      );
+      const connectedUser = res.body.users.find((u: { id: string }) => u.id === user1Id);
       if (connectedUser) {
         expect(connectedUser).toHaveProperty('firstName');
         expect(connectedUser).toHaveProperty('isConnected');
@@ -364,9 +360,7 @@ describe('Connections (e2e)', () => {
     });
 
     it('should reject unauthenticated request', async () => {
-      await request(app.getHttpServer())
-        .get(`/api/v1/connections/users/${user1Id}`)
-        .expect(401);
+      await request(app.getHttpServer()).get(`/api/v1/connections/users/${user1Id}`).expect(401);
     });
   });
 
@@ -403,4 +397,3 @@ async function activateUser(
     .send({ status: 'active' })
     .expect(204);
 }
-

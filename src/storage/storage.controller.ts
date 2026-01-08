@@ -71,7 +71,7 @@ export class StorageController {
     if (dto.entity === 'events') {
       try {
         await this.eventService.getMyEventById(dto.entityId);
-      } catch (error) {
+      } catch {
         throw new ForbiddenEntityAccessError();
       }
     }

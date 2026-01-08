@@ -35,7 +35,9 @@ export class CreateEventDto {
   @IsString()
   link?: string;
 
-  @ApiPropertyOptional({ example: 'Join us for an in-depth discussion on cloud architecture patterns' })
+  @ApiPropertyOptional({
+    example: 'Join us for an in-depth discussion on cloud architecture patterns',
+  })
   @IsOptional()
   @IsString()
   description?: string;
@@ -52,7 +54,10 @@ export class CreateEventDto {
   @IsString({ each: true })
   tags?: string[];
 
-  @ApiPropertyOptional({ example: 50, description: 'Maximum number of participants (null for unlimited)' })
+  @ApiPropertyOptional({
+    example: 50,
+    description: 'Maximum number of participants (null for unlimited)',
+  })
   @IsOptional()
   @IsInt()
   @Min(1)

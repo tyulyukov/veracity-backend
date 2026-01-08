@@ -277,11 +277,30 @@ describe('Events (e2e)', () => {
         .set('Cookie', speakerCookies)
         .expect(200);
 
-      expect(res.body).toBeInstanceOf(Array);
-      expect(res.body.length).toBe(2);
-      expect(res.body[0].id).toBeDefined();
-      expect(res.body[0].firstName).toBeDefined();
-      expect(res.body[0].comment).toBeDefined();
+      expect(res.body.participants).toBeInstanceOf(Array);
+      expect(res.body.participants.length).toBe(2);
+      expect(res.body.participants[0].id).toBeDefined();
+      expect(res.body.participants[0].firstName).toBeDefined();
+      expect(res.body.participants[0].comment).toBeDefined();
+      expect(res.body.nextCursor).toBeNull();
+    });
+
+    it('should support pagination', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/api/v1/events/${eventId}/participants?limit=1`)
+        .set('Cookie', speakerCookies)
+        .expect(200);
+
+      expect(res.body.participants.length).toBe(1);
+      expect(res.body.nextCursor).toBeDefined();
+
+      const res2 = await request(app.getHttpServer())
+        .get(`/api/v1/events/${eventId}/participants?cursor=${res.body.nextCursor}`)
+        .set('Cookie', speakerCookies)
+        .expect(200);
+
+      expect(res2.body.participants.length).toBe(1);
+      expect(res2.body.participants[0].id).not.toBe(res.body.participants[0].id);
     });
 
     it('should reject non-speaker request', async () => {

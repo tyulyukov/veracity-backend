@@ -26,7 +26,14 @@ export const mockEmailProvider: EmailProvider & {
 };
 
 export const mockStorageProvider: StorageProvider & {
-  uploadedFiles: Array<{ entity: string; entityId: string; field: string; filename: string; contentType: string; size: number }>;
+  uploadedFiles: Array<{
+    entity: string;
+    entityId: string;
+    field: string;
+    filename: string;
+    contentType: string;
+    size: number;
+  }>;
 } = {
   uploadedFiles: [],
   async uploadFile(params: UploadFileParams): Promise<UploadFileResult> {

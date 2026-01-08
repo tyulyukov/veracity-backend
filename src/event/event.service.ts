@@ -364,14 +364,52 @@ export class EventService {
     }
   }
 
-  async getEventParticipants(eventId: string): Promise<EventParticipant[]> {
+  async getEventParticipants(
+    eventId: string,
+    cursor?: string,
+    limit?: number,
+  ): Promise<{ participants: EventParticipant[]; nextCursor: string | null }> {
     try {
-      const result = await this.pool.query<DbEventParticipantRow>(
-        `SELECT * FROM speaker.event_participants_v WHERE event_id = $1 ORDER BY registration_created_at DESC`,
-        [eventId],
-      );
+      const params: (string | null)[] = [eventId];
+      const conditions: string[] = ['event_id = $1'];
+      let paramIndex = 2;
+      const pageSize = limit ?? DEFAULT_PAGE_SIZE;
 
-      return result.rows.map((row) => this.mapEventParticipantRow(row));
+      if (cursor) {
+        const [registrationCreatedAt, id] = cursor.split(',');
+        conditions.push(
+          `(registration_created_at, id) < ($${paramIndex}::timestamptz, $${paramIndex + 1}::uuid)`,
+        );
+        params.push(registrationCreatedAt, id);
+        paramIndex += 2;
+      }
+
+      const whereClause = conditions.join(' AND ');
+
+      const sql = `
+        SELECT * FROM speaker.event_participants_v
+        WHERE ${whereClause}
+        ORDER BY registration_created_at DESC, id DESC
+        LIMIT ${pageSize + 1}
+      `;
+
+      const result = await this.pool.query<DbEventParticipantRow>(sql, params);
+
+      let nextCursor: string | null = null;
+      const rows = result.rows;
+
+      if (rows.length > pageSize) {
+        rows.pop();
+        const lastRow = rows[rows.length - 1];
+        const registrationCreatedAt =
+          lastRow.registration_created_at instanceof Date
+            ? lastRow.registration_created_at
+            : new Date(lastRow.registration_created_at);
+        nextCursor = `${registrationCreatedAt.toISOString()},${lastRow.id}`;
+      }
+
+      const participants = rows.map((row) => this.mapEventParticipantRow(row));
+      return { participants, nextCursor };
     } catch (error) {
       throw this.mapPgError(error);
     }
@@ -404,7 +442,9 @@ export class EventService {
     };
   }
 
-  private mapEventWithRegistrationRow(row: DbEventWithRegistrationRow): EventWithRegistrationStatus {
+  private mapEventWithRegistrationRow(
+    row: DbEventWithRegistrationRow,
+  ): EventWithRegistrationStatus {
     return {
       id: row.id,
       speaker_id: row.speaker_id,

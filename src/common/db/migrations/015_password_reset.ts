@@ -90,4 +90,3 @@ export async function down(pgm: MigrationBuilder): Promise<void> {
     CREATE INDEX idx_otp_codes_email ON otp_codes(email);
   `);
 }
-

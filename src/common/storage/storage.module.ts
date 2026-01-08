@@ -16,4 +16,3 @@ import { ImageProcessorService } from './image-processor.service';
   exports: [StorageService, STORAGE_PROVIDER, ImageProcessorService],
 })
 export class StorageModule {}
-

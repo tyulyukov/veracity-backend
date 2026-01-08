@@ -118,4 +118,3 @@ export async function down(pgm: MigrationBuilder): Promise<void> {
     GRANT SELECT ON "user".user_detail_with_connection_v TO standard_user, speaker;
   `);
 }
-

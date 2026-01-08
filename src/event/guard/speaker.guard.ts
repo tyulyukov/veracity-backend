@@ -1,7 +1,7 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Request } from 'express';
 import { CurrentUserPayload } from '@/common/decorator/current-user.decorator';
-import { UnauthorizedEventAccessError } from '../domain/unauthorized-event-access.error';
+import { UnauthorizedEventAccessError } from '@/event/domain/unauthorized-event-access.error';
 
 @Injectable()
 export class SpeakerGuard implements CanActivate {

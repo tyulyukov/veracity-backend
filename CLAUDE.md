@@ -24,6 +24,122 @@ You are an AI coding agent working in this repository. Follow these rules strict
 - Services MUST NOT return DTOs and MUST NOT depend on controller DTOs.
 - Domain code MUST NOT import from `dto/` or controller files.
 
+## Pagination: MANDATORY for list endpoints
+All endpoints that return lists of data MUST implement pagination. There are two types of pagination used in this repository:
+
+### Cursor-based pagination (User-facing endpoints)
+- **Use for**: ALL user-facing endpoints (under `/api/v1/users`, `/api/v1/events`, `/api/v1/connections`, etc.)
+- **Why**: Cursor pagination is efficient for real-time data, prevents page drift, and scales well.
+- **Implementation**:
+  - Use `CursorPaginationDto` from `@/common/dto/cursor-pagination.dto` as query params
+  - Cursor format: `{sort_field},{id}` (e.g., `2026-01-09T12:00:00.000Z,123e4567-e89b-12d3-a456-426614174000`)
+  - Sort order: Always include `id` as secondary sort to ensure stable pagination
+  - Default limit: 20 items per page (max 100)
+  - Service method returns: `{ items: T[]; nextCursor: string | null }`
+  - Controller returns inline type: `{ items: ItemDto[]; nextCursor: string | null }`
+  - Use `@ApiOkResponse({ description: 'Paginated list of...' })` (do NOT create separate pagination response DTOs)
+
+**Example cursor pagination implementation**:
+```typescript
+// Controller
+@Get()
+@ApiOkResponse({ description: 'Paginated list of events' })
+async getEvents(@Query() query: CursorPaginationDto): Promise<{ events: EventDto[]; nextCursor: string | null }> {
+  const result = await this.service.getEvents(query.cursor, query.limit);
+  return {
+    events: result.events.map(mapToDto),
+    nextCursor: result.nextCursor,
+  };
+}
+
+// Service
+async getEvents(cursor?: string, limit?: number): Promise<{ events: Event[]; nextCursor: string | null }> {
+  const pageSize = limit ?? 20;
+  const params: unknown[] = [];
+  let paramIndex = 1;
+
+  let whereClause = '';
+  if (cursor) {
+    const [sortField, id] = cursor.split(',');
+    whereClause = `WHERE (sort_field, id) < ($${paramIndex}::timestamptz, $${paramIndex + 1}::uuid)`;
+    params.push(sortField, id);
+    paramIndex += 2;
+  }
+
+  const sql = `
+    SELECT * FROM view_name
+    ${whereClause}
+    ORDER BY sort_field DESC, id DESC
+    LIMIT ${pageSize + 1}
+  `;
+
+  const result = await this.pool.query(sql, params);
+  const rows = result.rows;
+
+  let nextCursor: string | null = null;
+  if (rows.length > pageSize) {
+    rows.pop();
+    const lastRow = rows[rows.length - 1];
+    nextCursor = `${lastRow.sort_field.toISOString()},${lastRow.id}`;
+  }
+
+  return { events: rows.map(mapRow), nextCursor };
+}
+```
+
+### Offset-based pagination (Admin endpoints)
+- **Use for**: ALL admin-facing endpoints (under `/api/v1/admin`)
+- **Why**: Admins need total counts, page numbers, and the ability to jump to specific pages for data management tasks.
+- **Implementation**:
+  - Use `OffsetPaginationDto` from `@/common/dto/offset-pagination.dto` as query params
+  - Parameters: `offset` (default: 0) and `limit` (default: 20, max: 100)
+  - Service method returns: `{ items: T[]; total: number }`
+  - Controller returns inline type: `{ items: ItemDto[]; total: number }`
+  - Use `@ApiOkResponse({ description: 'Paginated list of...' })` (do NOT create separate pagination response DTOs)
+
+**Example offset pagination implementation**:
+```typescript
+// Controller
+@Get()
+@ApiOkResponse({ description: 'Paginated list of users' })
+async findUsers(@Query() query: OffsetPaginationDto): Promise<{ users: UserDto[]; total: number }> {
+  const result = await this.service.findUsers(query.offset, query.limit);
+  return {
+    users: result.users.map(mapUserToDto),
+    total: result.total,
+  };
+}
+
+// Service
+async findUsers(offset?: number, limit?: number): Promise<{ users: User[]; total: number }> {
+  const pageOffset = offset ?? 0;
+  const pageSize = limit ?? 20;
+
+  const countResult = await this.pool.query('SELECT COUNT(*) FROM view_name');
+  const total = parseInt(countResult.rows[0].count, 10);
+
+  const sql = `
+    SELECT * FROM view_name
+    ORDER BY created_at DESC, id DESC
+    LIMIT $1 OFFSET $2
+  `;
+
+  const result = await this.pool.query(sql, [pageSize, pageOffset]);
+  return { users: result.rows.map(mapRow), total };
+}
+```
+
+### When pagination is NOT required
+- **Small reference tables**: Tables with a fixed, small number of entries (e.g., `/interests` with ~10-20 interests)
+- **Single item lookups**: Endpoints that return a single resource by ID (e.g., `GET /users/:id`)
+- **Meta/system endpoints**: Health checks, configuration endpoints
+
+### Critical rules
+- **NEVER** return an unpaginated array for user data, events, connections, or any entity that can grow
+- **ALWAYS** verify new `GET` endpoints that return lists are paginated before committing
+- **ALWAYS** add pagination tests to integration tests (`test/*.e2e-spec.ts`)
+- If unsure whether to paginate, **always paginate** - it's better to paginate unnecessarily than to have a performance issue later
+
 ## Errors: domain-only, per module
 - Never throw NestJS HTTP exceptions directly (`BadRequestException`, `UnauthorizedException`, `ForbiddenException`, `NotFoundException`, etc.) from controllers/services/domain.
 - All expected failures MUST be represented as custom errors located in the module’s `domain/` folder, one class per file.

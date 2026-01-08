@@ -92,11 +92,20 @@ export class UsersAdminService {
         paramIndex++;
       }
 
+      let searchParamIndex: number | null = null;
       if (query.search) {
+        searchParamIndex = paramIndex;
         conditions.push(`(
-          LOWER(first_name) LIKE '%' || LOWER($${paramIndex}) || '%'
+          LOWER(first_name || ' ' || last_name) LIKE '%' || LOWER($${paramIndex}) || '%'
+          OR LOWER(first_name) LIKE '%' || LOWER($${paramIndex}) || '%'
           OR LOWER(last_name) LIKE '%' || LOWER($${paramIndex}) || '%'
           OR LOWER(email) LIKE '%' || LOWER($${paramIndex}) || '%'
+          OR EXISTS (
+            SELECT 1 FROM unnest(string_to_array(LOWER($${paramIndex}), ' ')) AS word
+            WHERE LOWER(first_name) LIKE '%' || word || '%'
+               OR LOWER(last_name) LIKE '%' || word || '%'
+               OR LOWER(email) LIKE '%' || word || '%'
+          )
         )`);
         params.push(query.search);
         paramIndex++;
@@ -111,10 +120,30 @@ export class UsersAdminService {
       const limit = query.limit ?? 20;
       const offset = query.offset ?? 0;
 
+      const orderByClause =
+        query.search && searchParamIndex !== null
+          ? `ORDER BY
+            CASE
+              WHEN LOWER(first_name || ' ' || last_name) = LOWER($${searchParamIndex}) THEN 1
+              WHEN LOWER(email) = LOWER($${searchParamIndex}) THEN 1
+              WHEN LOWER(first_name || ' ' || last_name) LIKE '%' || LOWER($${searchParamIndex}) || '%' THEN 2
+              WHEN LOWER(email) LIKE '%' || LOWER($${searchParamIndex}) || '%' THEN 2
+              WHEN EXISTS (
+                SELECT 1 FROM unnest(string_to_array(LOWER($${searchParamIndex}), ' ')) AS word
+                WHERE LOWER(first_name) LIKE '%' || word || '%'
+                   OR LOWER(last_name) LIKE '%' || word || '%'
+                   OR LOWER(email) LIKE '%' || word || '%'
+              ) THEN 3
+              ELSE 4
+            END,
+            created_at DESC,
+            id DESC`
+          : 'ORDER BY created_at DESC, id DESC';
+
       const sql = `
         SELECT * FROM admin.users_with_interests_v
         ${whereClause}
-        ORDER BY created_at DESC, id DESC
+        ${orderByClause}
         LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
       `;
       params.push(limit, offset);

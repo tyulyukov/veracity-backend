@@ -158,10 +158,18 @@ export class UserService {
         paramIndex++;
       }
 
+      let searchParamIndex: number | null = null;
       if (query.search) {
+        searchParamIndex = paramIndex;
         conditions.push(`(
-          LOWER(first_name) LIKE '%' || LOWER($${paramIndex}) || '%'
+          LOWER(first_name || ' ' || last_name) LIKE '%' || LOWER($${paramIndex}) || '%'
+          OR LOWER(first_name) LIKE '%' || LOWER($${paramIndex}) || '%'
           OR LOWER(last_name) LIKE '%' || LOWER($${paramIndex}) || '%'
+          OR EXISTS (
+            SELECT 1 FROM unnest(string_to_array(LOWER($${paramIndex}), ' ')) AS word
+            WHERE LOWER(first_name) LIKE '%' || word || '%'
+               OR LOWER(last_name) LIKE '%' || word || '%'
+          )
         )`);
         params.push(query.search);
         paramIndex++;
@@ -195,10 +203,27 @@ export class UserService {
       const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
       const pageSize = query.limit ?? DEFAULT_PAGE_SIZE;
 
+      const orderByClause =
+        query.search && searchParamIndex !== null
+          ? `ORDER BY
+            CASE
+              WHEN LOWER(first_name || ' ' || last_name) = LOWER($${searchParamIndex}) THEN 1
+              WHEN LOWER(first_name || ' ' || last_name) LIKE '%' || LOWER($${searchParamIndex}) || '%' THEN 2
+              WHEN EXISTS (
+                SELECT 1 FROM unnest(string_to_array(LOWER($${searchParamIndex}), ' ')) AS word
+                WHERE LOWER(first_name) LIKE '%' || word || '%'
+                   OR LOWER(last_name) LIKE '%' || word || '%'
+              ) THEN 3
+              ELSE 4
+            END,
+            created_at DESC,
+            id DESC`
+          : 'ORDER BY created_at DESC, id DESC';
+
       const sql = `
         SELECT * FROM "user".users_with_connections_v
         ${whereClause}
-        ORDER BY created_at DESC, id DESC
+        ${orderByClause}
         LIMIT ${pageSize + 1}
       `;
 

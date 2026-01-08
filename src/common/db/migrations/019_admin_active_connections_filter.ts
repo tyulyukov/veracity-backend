@@ -84,4 +84,3 @@ export async function down(pgm: MigrationBuilder): Promise<void> {
     GRANT SELECT ON admin.users_with_interests_v TO moderator, owner;
   `);
 }
-

@@ -50,7 +50,8 @@ describe('Storage (e2e)', () => {
       expect(res.body.path).toMatch(/\.jpeg$/);
 
       expect(mockStorageProvider.uploadedFiles.length).toBe(initialCount + 1);
-      const uploaded = mockStorageProvider.uploadedFiles[mockStorageProvider.uploadedFiles.length - 1];
+      const uploaded =
+        mockStorageProvider.uploadedFiles[mockStorageProvider.uploadedFiles.length - 1];
       expect(uploaded.entity).toBe('users');
       expect(uploaded.entityId).toBe(userId);
       expect(uploaded.field).toBe('avatar');
@@ -155,6 +156,6 @@ async function getUserId(app: INestApplication, cookies: string[]): Promise<stri
 function createTestImageBuffer(): Buffer {
   return Buffer.from(
     'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
-    'base64'
+    'base64',
   );
 }

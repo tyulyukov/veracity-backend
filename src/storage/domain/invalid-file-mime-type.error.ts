@@ -9,4 +9,3 @@ export class InvalidFileMimeTypeError extends AppError {
     });
   }
 }
-
