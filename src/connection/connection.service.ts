@@ -212,6 +212,12 @@ export class ConnectionService {
     if (error instanceof DatabaseError || (error instanceof Error && 'message' in error)) {
       const message = (error as Error).message;
 
+      if (error instanceof DatabaseError && error.code === '23505') {
+        if (error.constraint === 'connections_bidirectional_unique_idx') {
+          return new ConnectionRequestAlreadySentError();
+        }
+      }
+
       if (message.includes('Connection already exists')) {
         return new ConnectionAlreadyExistsError();
       }
