@@ -17,15 +17,17 @@ FROM node:24-alpine AS production
 
 WORKDIR /app
 
-ENV NODE_ENV=production
-
 COPY package*.json ./
 RUN npm ci --only=production && npm cache clean --force
 
 COPY --from=builder /app/dist ./dist
 
-USER node
+COPY --from=builder /app/node_modules/node-pg-migrate ./node_modules/node-pg-migrate
+COPY --from=builder /app/node_modules/tsx ./node_modules/tsx
 
-EXPOSE 3000
+COPY --from=builder /app/node_modules/.bin/node-pg-migrate ./node_modules/.bin/node-pg-migrate
+COPY --from=builder /app/node_modules/.bin/tsx ./node_modules/.bin/tsx
+
+USER node
 
 CMD ["node", "dist/main.js"]
