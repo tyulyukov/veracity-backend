@@ -21,7 +21,8 @@
     "test:integration:watch": "jest --config ./test/jest-e2e.json --runInBand --watch",
     "migrate:up": "node --import tsx node_modules/node-pg-migrate/bin/node-pg-migrate.js up -m src/common/db/migrations",
     "migrate:down": "node --import tsx node_modules/node-pg-migrate/bin/node-pg-migrate.js down -m src/common/db/migrations",
-    "migrate:create": "node-pg-migrate create -m src/common/db/migrations -j ts"
+    "migrate:create": "node-pg-migrate create -m src/common/db/migrations -j ts",
+    "migrate:prod:up": "node --import tsx node_modules/node-pg-migrate/bin/node-pg-migrate.js  up -m dist/common/db/migrations"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.962.0",
