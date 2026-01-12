@@ -25,6 +25,13 @@ export const IMAGE_PROCESSING_CONFIGS: Record<StorageField, ImageProcessingConfi
     format: 'jpeg',
     allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
   },
+  post_image: {
+    maxWidth: 1920,
+    maxHeight: 1920,
+    quality: 85,
+    format: 'jpeg',
+    allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
+  },
 };
 
 export function getImageProcessingConfig(field: StorageField): ImageProcessingConfig {

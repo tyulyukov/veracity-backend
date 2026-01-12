@@ -23,6 +23,7 @@ import { UploadFileResponseDto } from '@/common/storage/dto/upload-file-response
 import { ForbiddenEntityAccessError } from './domain/forbidden-entity-access.error';
 import { InvalidFileMimeTypeError } from './domain/invalid-file-mime-type.error';
 import { EventService } from '@/event/event.service';
+import { ContentService } from '@/content/content.service';
 
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 
@@ -33,6 +34,7 @@ export class StorageController {
     private readonly storageService: StorageService,
     private readonly imageProcessor: ImageProcessorService,
     private readonly eventService: EventService,
+    private readonly contentService: ContentService,
     private readonly logger: PinoLogger,
   ) {
     this.logger.setContext(StorageController.name);
@@ -48,9 +50,9 @@ export class StorageController {
     schema: {
       type: 'object',
       properties: {
-        entity: { type: 'string', enum: ['users'] },
+        entity: { type: 'string', enum: ['users', 'events', 'posts'] },
         entityId: { type: 'string', format: 'uuid' },
-        field: { type: 'string', enum: ['avatar'] },
+        field: { type: 'string', enum: ['avatar', 'event_image', 'post_image'] },
         file: { type: 'string', format: 'binary' },
       },
       required: ['entity', 'entityId', 'field', 'file'],
@@ -71,6 +73,14 @@ export class StorageController {
     if (dto.entity === 'events') {
       try {
         await this.eventService.getMyEventById(dto.entityId);
+      } catch {
+        throw new ForbiddenEntityAccessError();
+      }
+    }
+
+    if (dto.entity === 'posts') {
+      try {
+        await this.contentService.getMyPostById(dto.entityId);
       } catch {
         throw new ForbiddenEntityAccessError();
       }

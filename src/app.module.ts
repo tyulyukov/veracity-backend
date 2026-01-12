@@ -15,6 +15,8 @@ import { AdminModule } from './admin/admin.module';
 import { StorageFeatureModule } from './storage/storage.module';
 import { ConnectionModule } from './connection/connection.module';
 import { EventModule } from './event/event.module';
+import { ContentModule } from './content/content.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
   imports: [
@@ -32,6 +34,8 @@ import { EventModule } from './event/event.module';
     StorageFeatureModule,
     ConnectionModule,
     EventModule,
+    ContentModule,
+    AnalyticsModule,
   ],
   providers: [
     {

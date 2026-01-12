@@ -6,6 +6,7 @@ import { SessionExpiredError } from './domain/session-expired.error';
 interface PoolEntry {
   pool: Pool;
   lastAccess: Date;
+  lastActivityUpdate: Date;
 }
 
 @Injectable()
@@ -13,6 +14,7 @@ export class UserPoolRegistry implements OnModuleDestroy {
   private readonly pools = new Map<string, PoolEntry>();
   private readonly maxSize = 500;
   private readonly ttlMs = 20 * 60 * 1000;
+  private readonly activityThrottleMs = 5 * 60 * 1000;
   private readonly locks = new Map<string, Promise<Pool>>();
   private cleanupInterval: NodeJS.Timeout;
 
@@ -26,7 +28,17 @@ export class UserPoolRegistry implements OnModuleDestroy {
       throw new SessionExpiredError();
     }
     entry.lastAccess = new Date();
+    this.touchActivityIfNeeded(entry);
     return entry.pool;
+  }
+
+  private touchActivityIfNeeded(entry: PoolEntry): void {
+    const now = Date.now();
+    if (now - entry.lastActivityUpdate.getTime() < this.activityThrottleMs) {
+      return;
+    }
+    entry.lastActivityUpdate = new Date();
+    entry.pool.query('SELECT "user".touch_activity()').catch(() => {});
   }
 
   async createPoolForUser(userId: string, email: string, password: string): Promise<Pool> {
@@ -94,7 +106,8 @@ export class UserPoolRegistry implements OnModuleDestroy {
 
     await pool.query('SELECT 1');
 
-    this.pools.set(userId, { pool, lastAccess: new Date() });
+    const now = new Date();
+    this.pools.set(userId, { pool, lastAccess: now, lastActivityUpdate: new Date(0) });
     return pool;
   }
 
