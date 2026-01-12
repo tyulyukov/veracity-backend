@@ -21,8 +21,7 @@
     "test:integration:watch": "jest --config ./test/jest-e2e.json --runInBand --watch",
     "migrate:up": "node --import tsx node_modules/node-pg-migrate/bin/node-pg-migrate.js up -m src/common/db/migrations",
     "migrate:down": "node --import tsx node_modules/node-pg-migrate/bin/node-pg-migrate.js down -m src/common/db/migrations",
-    "migrate:create": "node-pg-migrate create -m src/common/db/migrations -j ts",
-    "migrate:prod:up": "node --import tsx node_modules/node-pg-migrate/bin/node-pg-migrate.js  up -m dist/common/db/migrations"
+    "migrate:create": "node-pg-migrate create -m src/common/db/migrations -j ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.962.0",
@@ -50,9 +49,7 @@
     "resend": "^6.6.0",
     "rxjs": "^7.8.1",
     "sharp": "^0.34.5",
-    "uuid": "^11.0.0",
-    "tsx": "^4.21.0",
-    "node-pg-migrate": "^8.0.4"
+    "uuid": "^11.0.0"
   },
   "devDependencies": {
     "@nestjs/cli": "^11.0.0",
@@ -85,7 +82,9 @@
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.7.2",
-    "typescript-eslint": "^8.51.0"
+    "typescript-eslint": "^8.51.0",
+    "tsx": "^4.21.0",
+    "node-pg-migrate": "^8.0.4"
   },
   "jest": {
     "moduleFileExtensions": [
