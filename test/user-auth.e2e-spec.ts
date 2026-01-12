@@ -1,6 +1,6 @@
 import request from 'supertest';
 import { INestApplication } from '@nestjs/common';
-import { setupTestApp, teardownTestApp, mockEmailProvider } from './setup/test-app';
+import { setupTestApp, teardownTestApp, mockEmailProvider, mockStorageProvider } from './setup/test-app';
 import { getInterestIds } from './setup/auth.helper';
 
 describe('User Auth (e2e)', () => {
@@ -276,4 +276,121 @@ describe('User Auth (e2e)', () => {
         .expect(429);
     });
   });
+
+  describe('Avatar upload during registration flow', () => {
+    it('should allow pending user to upload avatar and update profile', async () => {
+      const email = 'avatar-registration@test.com';
+
+      const registerRes = await request(app.getHttpServer())
+        .post('/api/v1/users/auth/register')
+        .send({
+          email,
+          password: 'password123',
+          firstName: 'Avatar',
+          lastName: 'Test',
+          interestIds: interestIds.slice(0, 2),
+        })
+        .expect(201);
+
+      const userId = registerRes.body.userId;
+      const cookies = registerRes.headers['set-cookie'] as unknown as string[];
+
+      expect(userId).toBeDefined();
+      expect(cookies).toBeDefined();
+
+      const userBeforeAvatar = await request(app.getHttpServer())
+        .get('/api/v1/users/me')
+        .set('Cookie', cookies)
+        .expect(200);
+
+      expect(userBeforeAvatar.body.status).toBe('pending');
+      expect(userBeforeAvatar.body.avatarUrl).toBeNull();
+
+      const imageBuffer = createTestImageBuffer();
+      const initialUploadCount = mockStorageProvider.uploadedFiles.length;
+
+      const uploadRes = await request(app.getHttpServer())
+        .post('/api/v1/storage/upload')
+        .set('Cookie', cookies)
+        .field('entity', 'users')
+        .field('entityId', userId)
+        .field('field', 'avatar')
+        .attach('file', imageBuffer, 'avatar.jpg')
+        .expect(201);
+
+      expect(uploadRes.body).toHaveProperty('path');
+      expect(uploadRes.body.path).toContain('users');
+      expect(uploadRes.body.path).toContain(userId);
+      expect(uploadRes.body.path).toContain('avatar');
+      expect(mockStorageProvider.uploadedFiles.length).toBe(initialUploadCount + 1);
+
+      const avatarPath = uploadRes.body.path;
+
+      const updateRes = await request(app.getHttpServer())
+        .patch('/api/v1/users/me')
+        .set('Cookie', cookies)
+        .send({ avatarUrl: avatarPath })
+        .expect(200);
+
+      expect(updateRes.body.avatarUrl).toBe(avatarPath);
+      expect(updateRes.body.status).toBe('pending');
+
+      const userAfterAvatar = await request(app.getHttpServer())
+        .get('/api/v1/users/me')
+        .set('Cookie', cookies)
+        .expect(200);
+
+      expect(userAfterAvatar.body.avatarUrl).toBe(avatarPath);
+    });
+
+    it('should reject avatar upload for different user during registration', async () => {
+      const email1 = 'avatar-user1@test.com';
+      const email2 = 'avatar-user2@test.com';
+
+      const registerRes1 = await request(app.getHttpServer())
+        .post('/api/v1/users/auth/register')
+        .send({
+          email: email1,
+          password: 'password123',
+          firstName: 'User',
+          lastName: 'One',
+          interestIds: interestIds.slice(0, 1),
+        })
+        .expect(201);
+
+      const registerRes2 = await request(app.getHttpServer())
+        .post('/api/v1/users/auth/register')
+        .send({
+          email: email2,
+          password: 'password123',
+          firstName: 'User',
+          lastName: 'Two',
+          interestIds: interestIds.slice(0, 1),
+        })
+        .expect(201);
+
+      const user1Cookies = registerRes1.headers['set-cookie'] as unknown as string[];
+      const user2Id = registerRes2.body.userId;
+
+      const imageBuffer = createTestImageBuffer();
+
+      const uploadRes = await request(app.getHttpServer())
+        .post('/api/v1/storage/upload')
+        .set('Cookie', user1Cookies)
+        .field('entity', 'users')
+        .field('entityId', user2Id)
+        .field('field', 'avatar')
+        .attach('file', imageBuffer, 'avatar.jpg')
+        .expect(403);
+
+      expect(uploadRes.body.code).toBe('FORBIDDEN_ENTITY_ACCESS');
+    });
+  });
 });
+
+function createTestImageBuffer(): Buffer {
+  return Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+    'base64',
+  );
+}
