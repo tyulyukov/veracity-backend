@@ -224,6 +224,54 @@ describe('Content (e2e)', () => {
     });
   });
 
+  describe('GET /posts/user/:userId', () => {
+    it('should get posts from a connected user', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/api/v1/posts/user/${user1Id}`)
+        .set('Cookie', user2Cookies)
+        .expect(200);
+
+      expect(res.body.posts).toBeInstanceOf(Array);
+      expect(res.body.posts.length).toBeGreaterThan(0);
+      expect(res.body.posts.every((p: any) => p.author.id === user1Id)).toBe(true);
+      expect(res.body.nextCursor).toBeDefined();
+    });
+
+    it('should reject access to posts from non-connected user', async () => {
+      await request(app.getHttpServer())
+        .get(`/api/v1/posts/user/${user1Id}`)
+        .set('Cookie', user3Cookies)
+        .expect(403);
+    });
+
+    it('should reject access to non-existent user', async () => {
+      await request(app.getHttpServer())
+        .get('/api/v1/posts/user/00000000-0000-0000-0000-000000000000')
+        .set('Cookie', user1Cookies)
+        .expect(404);
+    });
+
+    it('should support cursor pagination', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/api/v1/posts/user/${user1Id}?limit=1`)
+        .set('Cookie', user2Cookies)
+        .expect(200);
+
+      expect(res.body.posts.length).toBeLessThanOrEqual(1);
+      expect(res.body.nextCursor).toBeDefined();
+    });
+
+    it('should return empty array for user with no posts', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/api/v1/posts/user/${user2Id}`)
+        .set('Cookie', user1Cookies)
+        .expect(200);
+
+      expect(res.body.posts).toBeInstanceOf(Array);
+      expect(res.body.nextCursor).toBeNull();
+    });
+  });
+
   describe('GET /posts/:postId', () => {
     it('should get post by id', async () => {
       const res = await request(app.getHttpServer())

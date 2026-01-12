@@ -14,6 +14,8 @@ import { PostRequiresContentError } from './domain/post-requires-content.error';
 import { CommentRequiresTextError } from './domain/comment-requires-text.error';
 import { UnauthorizedPostAccessError } from './domain/unauthorized-post-access.error';
 import { UnauthorizedCommentAccessError } from './domain/unauthorized-comment-access.error';
+import { NotConnectedToUserError } from './domain/not-connected-to-user.error';
+import { UserNotFoundError } from '@/user/domain/user-not-found.error';
 
 interface DbPostRow {
   id: string;
@@ -171,6 +173,90 @@ export class ContentService {
       const posts = rows.map((row) => this.mapMyPostRow(row));
       return { posts, nextCursor };
     } catch (error) {
+      throw this.mapPgError(error);
+    }
+  }
+
+  async getUserPosts(
+    userId: string,
+    cursor?: string,
+    limit?: number,
+  ): Promise<{ posts: PostFeedItem[]; nextCursor: string | null }> {
+    try {
+      const userCheck = await this.pool.query<{ id: string; status: string }>(
+        `SELECT id, status FROM users WHERE id = $1`,
+        [userId],
+      );
+
+      if (userCheck.rows.length === 0) {
+        throw new UserNotFoundError(userId);
+      }
+
+      if (userCheck.rows[0].status !== 'active') {
+        throw new UserNotFoundError(userId);
+      }
+
+      const connectionCheck = await this.pool.query<{ exists: boolean }>(
+        `SELECT EXISTS (
+          SELECT 1 FROM connections c
+          JOIN users u ON u.email = session_user
+          WHERE c.status = 'approved'
+            AND ((c.requester_user_id = u.id AND c.target_user_id = $1)
+              OR (c.requester_user_id = $1 AND c.target_user_id = u.id))
+        ) AS exists`,
+        [userId],
+      );
+
+      if (!connectionCheck.rows[0].exists) {
+        throw new NotConnectedToUserError(userId);
+      }
+
+      const params: (string | null)[] = [userId];
+      const conditions: string[] = [`author_id = $1`];
+      let paramIndex = 2;
+      const pageSize = limit ?? DEFAULT_PAGE_SIZE;
+
+      if (cursor) {
+        const [createdAt, id] = cursor.split(',');
+        conditions.push(
+          `(created_at, id) < ($${paramIndex}::timestamptz, $${paramIndex + 1}::uuid)`,
+        );
+        params.push(createdAt, id);
+        paramIndex += 2;
+      }
+
+      const whereClause = `WHERE ${conditions.join(' AND ')}`;
+
+      const sql = `
+        SELECT id, text, image_urls, like_count, comment_count,
+               created_at, updated_at,
+               author_id, author_first_name, author_last_name, author_avatar_url, author_role,
+               is_liked_by_current_user
+        FROM "user".user_posts_v
+        ${whereClause}
+        ORDER BY created_at DESC, id DESC
+        LIMIT ${pageSize + 1}
+      `;
+
+      const result = await this.pool.query<DbPostFeedItemRow>(sql, params);
+
+      let nextCursor: string | null = null;
+      const rows = result.rows;
+
+      if (rows.length > pageSize) {
+        rows.pop();
+        const lastRow = rows[rows.length - 1];
+        const createdAt =
+          lastRow.created_at instanceof Date ? lastRow.created_at : new Date(lastRow.created_at);
+        nextCursor = `${createdAt.toISOString()},${lastRow.id}`;
+      }
+
+      const posts = rows.map((row) => this.mapPostFeedItemRow(row));
+      return { posts, nextCursor };
+    } catch (error) {
+      if (error instanceof UserNotFoundError || error instanceof NotConnectedToUserError) {
+        throw error;
+      }
       throw this.mapPgError(error);
     }
   }

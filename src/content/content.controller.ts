@@ -71,6 +71,20 @@ export class ContentController {
     };
   }
 
+  @Get('user/:userId')
+  @ApiOperation({ summary: 'Get posts from a specific user (requires approved connection)' })
+  @ApiOkResponse({ description: 'Paginated list of posts from the specified user' })
+  async getUserPosts(
+    @Param('userId', ParseUUIDPipe) userId: string,
+    @Query() query: CursorPaginationDto,
+  ): Promise<{ posts: PostResponseDto[]; nextCursor: string | null }> {
+    const result = await this.contentService.getUserPosts(userId, query.cursor, query.limit);
+    return {
+      posts: result.posts.map(mapPostFeedItemToDto),
+      nextCursor: result.nextCursor,
+    };
+  }
+
   @Get(':postId')
   @ApiOperation({ summary: 'Get post by ID' })
   @ApiOkResponse({ type: PostResponseDto })
