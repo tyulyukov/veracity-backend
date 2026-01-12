@@ -167,7 +167,7 @@ describe('Content (e2e)', () => {
   });
 
   describe('GET /posts/feed', () => {
-    it('should get feed from approved connections', async () => {
+    it('should get feed from approved connections and own posts', async () => {
       const res = await request(app.getHttpServer())
         .get('/api/v1/posts/feed')
         .set('Cookie', user2Cookies)
@@ -175,11 +175,13 @@ describe('Content (e2e)', () => {
 
       expect(res.body.posts).toBeInstanceOf(Array);
       expect(res.body.posts.length).toBeGreaterThan(0);
-      expect(res.body.posts[0].author.id).toBe(user1Id);
+      const authorIds = res.body.posts.map((p: { author: { id: string } }) => p.author.id);
+      expect(authorIds).toContain(user1Id);
+      expect(authorIds).toContain(user2Id);
       expect(res.body.nextCursor).toBeDefined();
     });
 
-    it('should not show own posts in feed', async () => {
+    it('should show own posts in feed', async () => {
       const res = await request(app.getHttpServer())
         .get('/api/v1/posts/feed')
         .set('Cookie', user1Cookies)
@@ -187,7 +189,7 @@ describe('Content (e2e)', () => {
 
       expect(res.body.posts).toBeInstanceOf(Array);
       const ownPosts = res.body.posts.filter((p: any) => p.author.id === user1Id);
-      expect(ownPosts.length).toBe(0);
+      expect(ownPosts.length).toBeGreaterThan(0);
     });
 
     it('should not show posts from non-connections', async () => {
