@@ -22,12 +22,6 @@ RUN npm ci --only=production && npm cache clean --force
 
 COPY --from=builder /app/dist ./dist
 
-COPY --from=builder /app/node_modules/node-pg-migrate ./node_modules/node-pg-migrate
-COPY --from=builder /app/node_modules/tsx ./node_modules/tsx
-
-COPY --from=builder /app/node_modules/.bin/node-pg-migrate ./node_modules/.bin/node-pg-migrate
-COPY --from=builder /app/node_modules/.bin/tsx ./node_modules/.bin/tsx
-
 USER node
 
 CMD ["node", "dist/main.js"]
