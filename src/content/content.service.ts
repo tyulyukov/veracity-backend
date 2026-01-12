@@ -2,12 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ClsService } from 'nestjs-cls';
 import { Pool, DatabaseError } from 'pg';
 import { CLS_USER_POOL } from '@/user-auth/user-jwt.strategy';
-import {
-  PostFeedItem,
-  PostWithDetails,
-  MyPost,
-  PostLike,
-} from './domain/post.type';
+import { PostFeedItem, PostWithDetails, MyPost } from './domain/post.type';
 import { CommentWithAuthor } from './domain/comment.type';
 import { PostNotFoundError } from './domain/post-not-found.error';
 import { CommentNotFoundError } from './domain/comment-not-found.error';
@@ -123,9 +118,7 @@ export class ContentService {
         rows.pop();
         const lastRow = rows[rows.length - 1];
         const createdAt =
-          lastRow.created_at instanceof Date
-            ? lastRow.created_at
-            : new Date(lastRow.created_at);
+          lastRow.created_at instanceof Date ? lastRow.created_at : new Date(lastRow.created_at);
         nextCursor = `${createdAt.toISOString()},${lastRow.id}`;
       }
 
@@ -171,9 +164,7 @@ export class ContentService {
         rows.pop();
         const lastRow = rows[rows.length - 1];
         const createdAt =
-          lastRow.created_at instanceof Date
-            ? lastRow.created_at
-            : new Date(lastRow.created_at);
+          lastRow.created_at instanceof Date ? lastRow.created_at : new Date(lastRow.created_at);
         nextCursor = `${createdAt.toISOString()},${lastRow.id}`;
       }
 
@@ -245,11 +236,7 @@ export class ContentService {
     }
   }
 
-  async updatePost(
-    postId: string,
-    text?: string,
-    imageUrls?: string[],
-  ): Promise<PostWithDetails> {
+  async updatePost(postId: string, text?: string, imageUrls?: string[]): Promise<PostWithDetails> {
     try {
       const result = await this.pool.query<DbPostRow>(
         `SELECT * FROM "user".fn_update_post($1, $2, $3)`,
@@ -279,10 +266,7 @@ export class ContentService {
 
   async likePost(postId: string): Promise<void> {
     try {
-      await this.pool.query<DbPostLikeRow>(
-        `SELECT * FROM "user".fn_like_post($1)`,
-        [postId],
-      );
+      await this.pool.query<DbPostLikeRow>(`SELECT * FROM "user".fn_like_post($1)`, [postId]);
     } catch (error) {
       throw this.mapPgError(error);
     }
@@ -336,9 +320,7 @@ export class ContentService {
         rows.pop();
         const lastRow = rows[rows.length - 1];
         const createdAt =
-          lastRow.created_at instanceof Date
-            ? lastRow.created_at
-            : new Date(lastRow.created_at);
+          lastRow.created_at instanceof Date ? lastRow.created_at : new Date(lastRow.created_at);
         nextCursor = `${createdAt.toISOString()},${lastRow.id}`;
       }
 
@@ -351,10 +333,10 @@ export class ContentService {
 
   async createComment(postId: string, text: string): Promise<CommentWithAuthor> {
     try {
-      const result = await this.pool.query(
-        `SELECT * FROM "user".fn_create_comment($1, $2)`,
-        [postId, text],
-      );
+      const result = await this.pool.query(`SELECT * FROM "user".fn_create_comment($1, $2)`, [
+        postId,
+        text,
+      ]);
 
       if (result.rows.length === 0) {
         throw new PostNotFoundError(postId);
@@ -372,10 +354,10 @@ export class ContentService {
 
   async updateComment(commentId: string, text: string): Promise<CommentWithAuthor> {
     try {
-      const result = await this.pool.query(
-        `SELECT * FROM "user".fn_update_comment($1, $2)`,
-        [commentId, text],
-      );
+      const result = await this.pool.query(`SELECT * FROM "user".fn_update_comment($1, $2)`, [
+        commentId,
+        text,
+      ]);
 
       if (result.rows.length === 0) {
         throw new CommentNotFoundError(commentId);
@@ -392,9 +374,7 @@ export class ContentService {
 
   async deleteComment(commentId: string): Promise<void> {
     try {
-      await this.pool.query(`SELECT "user".fn_soft_delete_comment($1)`, [
-        commentId,
-      ]);
+      await this.pool.query(`SELECT "user".fn_soft_delete_comment($1)`, [commentId]);
     } catch (error) {
       throw this.mapPgError(error);
     }

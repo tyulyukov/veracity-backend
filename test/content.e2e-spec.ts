@@ -11,7 +11,11 @@ async function getUserId(app: INestApplication, cookies: string[]): Promise<stri
   return res.body.id;
 }
 
-async function activateUser(app: INestApplication, adminCookies: string[], userId: string): Promise<void> {
+async function activateUser(
+  app: INestApplication,
+  adminCookies: string[],
+  userId: string,
+): Promise<void> {
   await request(app.getHttpServer())
     .patch(`/api/v1/admin/users/${userId}/status`)
     .set('Cookie', adminCookies)
@@ -19,14 +23,22 @@ async function activateUser(app: INestApplication, adminCookies: string[], userI
     .expect(204);
 }
 
-async function sendConnectionRequest(app: INestApplication, cookies: string[], targetUserId: string): Promise<void> {
+async function sendConnectionRequest(
+  app: INestApplication,
+  cookies: string[],
+  targetUserId: string,
+): Promise<void> {
   await request(app.getHttpServer())
     .post(`/api/v1/connections/${targetUserId}`)
     .set('Cookie', cookies)
     .expect(201);
 }
 
-async function approveConnection(app: INestApplication, cookies: string[], requesterUserId: string): Promise<void> {
+async function approveConnection(
+  app: INestApplication,
+  cookies: string[],
+  requesterUserId: string,
+): Promise<void> {
   await request(app.getHttpServer())
     .patch(`/api/v1/connections/${requesterUserId}/respond`)
     .set('Cookie', cookies)
@@ -468,8 +480,12 @@ describe('Content (e2e)', () => {
       expect(res.body.activities).toBeInstanceOf(Array);
       expect(res.body.total).toBeGreaterThan(0);
 
-      const hasPostCreated = res.body.activities.some((a: any) => a.activityType === 'post_created');
-      const hasPostDeleted = res.body.activities.some((a: any) => a.activityType === 'post_deleted');
+      const hasPostCreated = res.body.activities.some(
+        (a: any) => a.activityType === 'post_created',
+      );
+      const hasPostDeleted = res.body.activities.some(
+        (a: any) => a.activityType === 'post_deleted',
+      );
       expect(hasPostCreated || hasPostDeleted).toBe(true);
     });
   });

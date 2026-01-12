@@ -92,7 +92,10 @@ export class InterestAdminService {
     if (error instanceof DatabaseError || (error instanceof Error && 'message' in error)) {
       const message = (error as Error).message;
 
-      if (message.includes('Interest already exists') || message.includes('Interest name already exists')) {
+      if (
+        message.includes('Interest already exists') ||
+        message.includes('Interest name already exists')
+      ) {
         return new InterestAlreadyExistsError(name);
       }
       if (message.includes('Interest not found')) {

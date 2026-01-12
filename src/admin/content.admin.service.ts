@@ -90,11 +90,7 @@ export class ContentAdminService {
       LIMIT $2 OFFSET $3
     `;
 
-    const result = await this.pool.query<DbAdminPostRow>(sql, [
-      userId,
-      pageSize,
-      pageOffset,
-    ]);
+    const result = await this.pool.query<DbAdminPostRow>(sql, [userId, pageSize, pageOffset]);
 
     const posts = result.rows.map((row) => this.mapAdminPostRow(row));
     return { posts, total };
@@ -121,11 +117,7 @@ export class ContentAdminService {
       LIMIT $2 OFFSET $3
     `;
 
-    const result = await this.pool.query<DbUserActivityRow>(sql, [
-      userId,
-      pageSize,
-      pageOffset,
-    ]);
+    const result = await this.pool.query<DbUserActivityRow>(sql, [userId, pageSize, pageOffset]);
 
     const activities = result.rows.map((row) => this.mapUserActivityRow(row));
     return { activities, total };
@@ -140,7 +132,11 @@ export class ContentAdminService {
       comment_count: row.comment_count,
       created_at: row.created_at instanceof Date ? row.created_at : new Date(row.created_at),
       updated_at: row.updated_at instanceof Date ? row.updated_at : new Date(row.updated_at),
-      deleted_at: row.deleted_at ? (row.deleted_at instanceof Date ? row.deleted_at : new Date(row.deleted_at)) : null,
+      deleted_at: row.deleted_at
+        ? row.deleted_at instanceof Date
+          ? row.deleted_at
+          : new Date(row.deleted_at)
+        : null,
       author_id: row.author_id,
       author_email: row.author_email,
       author_first_name: row.author_first_name,

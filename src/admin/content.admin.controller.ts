@@ -1,17 +1,5 @@
-import {
-  Controller,
-  Get,
-  Param,
-  ParseUUIDPipe,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
-import {
-  ApiBearerAuth,
-  ApiOkResponse,
-  ApiOperation,
-  ApiTags,
-} from '@nestjs/swagger';
+import { Controller, Get, Param, ParseUUIDPipe, Query, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AdminJwtAuthGuard } from '@/admin-auth/guard/admin-jwt-auth.guard';
 import { OffsetPaginationDto } from '@/common/dto/offset-pagination.dto';
 import { ContentAdminService } from './content.admin.service';
@@ -32,11 +20,7 @@ export class ContentAdminController {
     @Param('userId', ParseUUIDPipe) userId: string,
     @Query() query: OffsetPaginationDto,
   ): Promise<{ posts: AdminPostDto[]; total: number }> {
-    const result = await this.contentAdminService.getUserPosts(
-      userId,
-      query.offset,
-      query.limit,
-    );
+    const result = await this.contentAdminService.getUserPosts(userId, query.offset, query.limit);
     return {
       posts: result.posts.map((post) => ({
         id: post.id,

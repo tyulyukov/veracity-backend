@@ -49,9 +49,9 @@ describe('Admin Interests (e2e)', () => {
         .set('Cookie', adminCookies)
         .expect(200);
 
-      expect(res.body.interests.every((i: { name: string }) => i.name.toLowerCase().includes('ai'))).toBe(
-        true,
-      );
+      expect(
+        res.body.interests.every((i: { name: string }) => i.name.toLowerCase().includes('ai')),
+      ).toBe(true);
     });
 
     it('should reject unauthenticated request', async () => {
@@ -159,7 +159,9 @@ describe('Admin Interests (e2e)', () => {
         .set('Cookie', adminCookies)
         .expect(200);
 
-      const updatedInterest = res.body.interests.find((i: { id: string }) => i.id === testInterestId);
+      const updatedInterest = res.body.interests.find(
+        (i: { id: string }) => i.id === testInterestId,
+      );
       expect(updatedInterest.name).toBe('Updated Interest');
     });
 
@@ -175,7 +177,9 @@ describe('Admin Interests (e2e)', () => {
         .set('Cookie', adminCookies)
         .expect(200);
 
-      const updatedInterest = res.body.interests.find((i: { id: string }) => i.id === testInterestId);
+      const updatedInterest = res.body.interests.find(
+        (i: { id: string }) => i.id === testInterestId,
+      );
       expect(updatedInterest.name).toBe('Trimmed Name');
     });
 
@@ -241,7 +245,9 @@ describe('Admin Interests (e2e)', () => {
         .set('Cookie', adminCookies)
         .expect(200);
 
-      const deletedInterest = res.body.interests.find((i: { id: string }) => i.id === testInterestId);
+      const deletedInterest = res.body.interests.find(
+        (i: { id: string }) => i.id === testInterestId,
+      );
       expect(deletedInterest).toBeUndefined();
     });
 
@@ -253,7 +259,9 @@ describe('Admin Interests (e2e)', () => {
     });
 
     it('should reject unauthenticated request', async () => {
-      await request(app.getHttpServer()).delete(`/api/v1/admin/interests/${testInterestId}`).expect(401);
+      await request(app.getHttpServer())
+        .delete(`/api/v1/admin/interests/${testInterestId}`)
+        .expect(401);
     });
   });
 });

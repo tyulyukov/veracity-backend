@@ -17,11 +17,6 @@ import { InterestAdminService } from './interest.admin.service';
     ContentAdminController,
     InterestAdminController,
   ],
-  providers: [
-    UsersAdminService,
-    ModeratorsAdminService,
-    ContentAdminService,
-    InterestAdminService,
-  ],
+  providers: [UsersAdminService, ModeratorsAdminService, ContentAdminService, InterestAdminService],
 })
 export class AdminModule {}

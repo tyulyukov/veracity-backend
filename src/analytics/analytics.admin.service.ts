@@ -234,10 +234,9 @@ export class AnalyticsAdminService {
     const pool = this.pool;
 
     try {
-      const result = await pool.query<TopInterestRow>(
-        'SELECT * FROM owner.get_top_interests($1)',
-        [limit],
-      );
+      const result = await pool.query<TopInterestRow>('SELECT * FROM owner.get_top_interests($1)', [
+        limit,
+      ]);
 
       return result.rows.map((row) => ({
         interestId: row.interest_id,

@@ -64,10 +64,7 @@ export class ContentController {
   async getMyPosts(
     @Query() query: CursorPaginationDto,
   ): Promise<{ posts: MyPostResponseDto[]; nextCursor: string | null }> {
-    const result = await this.contentService.getMyPosts(
-      query.cursor,
-      query.limit,
-    );
+    const result = await this.contentService.getMyPosts(query.cursor, query.limit);
     return {
       posts: result.posts.map(mapMyPostToDto),
       nextCursor: result.nextCursor,
@@ -77,9 +74,7 @@ export class ContentController {
   @Get(':postId')
   @ApiOperation({ summary: 'Get post by ID' })
   @ApiOkResponse({ type: PostResponseDto })
-  async getPostById(
-    @Param('postId', ParseUUIDPipe) postId: string,
-  ): Promise<PostResponseDto> {
+  async getPostById(@Param('postId', ParseUUIDPipe) postId: string): Promise<PostResponseDto> {
     const post = await this.contentService.getPostById(postId);
     return mapPostWithDetailsToDto(post);
   }
@@ -99,11 +94,7 @@ export class ContentController {
     @Param('postId', ParseUUIDPipe) postId: string,
     @Body() dto: UpdatePostDto,
   ): Promise<PostResponseDto> {
-    const post = await this.contentService.updatePost(
-      postId,
-      dto.text,
-      dto.imageUrls,
-    );
+    const post = await this.contentService.updatePost(postId, dto.text, dto.imageUrls);
     return mapPostWithDetailsToDto(post);
   }
 
@@ -111,9 +102,7 @@ export class ContentController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete post (own posts only)' })
   @ApiNoContentResponse()
-  async deletePost(
-    @Param('postId', ParseUUIDPipe) postId: string,
-  ): Promise<void> {
+  async deletePost(@Param('postId', ParseUUIDPipe) postId: string): Promise<void> {
     await this.contentService.deletePost(postId);
   }
 
@@ -121,9 +110,7 @@ export class ContentController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Like a post' })
   @ApiNoContentResponse()
-  async likePost(
-    @Param('postId', ParseUUIDPipe) postId: string,
-  ): Promise<void> {
+  async likePost(@Param('postId', ParseUUIDPipe) postId: string): Promise<void> {
     await this.contentService.likePost(postId);
   }
 
@@ -131,9 +118,7 @@ export class ContentController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Unlike a post' })
   @ApiNoContentResponse()
-  async unlikePost(
-    @Param('postId', ParseUUIDPipe) postId: string,
-  ): Promise<void> {
+  async unlikePost(@Param('postId', ParseUUIDPipe) postId: string): Promise<void> {
     await this.contentService.unlikePost(postId);
   }
 
@@ -144,11 +129,7 @@ export class ContentController {
     @Param('postId', ParseUUIDPipe) postId: string,
     @Query() query: CursorPaginationDto,
   ): Promise<{ comments: CommentResponseDto[]; nextCursor: string | null }> {
-    const result = await this.contentService.getComments(
-      postId,
-      query.cursor,
-      query.limit,
-    );
+    const result = await this.contentService.getComments(postId, query.cursor, query.limit);
     return {
       comments: result.comments.map(mapCommentToDto),
       nextCursor: result.nextCursor,
@@ -174,10 +155,7 @@ export class ContentController {
     @Param('commentId', ParseUUIDPipe) commentId: string,
     @Body() dto: UpdateCommentDto,
   ): Promise<CommentResponseDto> {
-    const comment = await this.contentService.updateComment(
-      commentId,
-      dto.text,
-    );
+    const comment = await this.contentService.updateComment(commentId, dto.text);
     return mapCommentToDto(comment);
   }
 
