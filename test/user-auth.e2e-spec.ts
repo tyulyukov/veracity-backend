@@ -1,6 +1,11 @@
 import request from 'supertest';
 import { INestApplication } from '@nestjs/common';
-import { setupTestApp, teardownTestApp, mockEmailProvider, mockStorageProvider } from './setup/test-app';
+import {
+  setupTestApp,
+  teardownTestApp,
+  mockEmailProvider,
+  mockStorageProvider,
+} from './setup/test-app';
 import { getInterestIds } from './setup/auth.helper';
 
 describe('User Auth (e2e)', () => {

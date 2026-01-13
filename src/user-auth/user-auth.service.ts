@@ -100,29 +100,15 @@ export class UserAuthService {
   }
 
   async resetPassword(email: string, code: string, newPassword: string): Promise<void> {
-    const result = await this.guestPool.query<{ otp_code: string; attempt_count: number }>(
-      'SELECT * FROM guest.check_otp_attempts($1)',
-      [email],
-    );
-
-    if (result.rows.length === 0) {
-      throw new OtpExpiredError();
+    try {
+      await this.guestPool.query('SELECT guest.reset_password_with_otp($1, $2, $3)', [
+        email,
+        code,
+        newPassword,
+      ]);
+    } catch (error) {
+      throw this.mapOtpError(error);
     }
-
-    const { otp_code: storedCode, attempt_count: attempts } = result.rows[0];
-
-    if (attempts > 5) {
-      throw new OtpThrottledError();
-    }
-
-    if (storedCode !== code) {
-      throw new OtpInvalidError();
-    }
-
-    await this.guestPool.query('SELECT guest.reset_password_with_otp($1, $2)', [
-      email,
-      newPassword,
-    ]);
   }
 
   private mapOtpError(error: unknown): Error {
